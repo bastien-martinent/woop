@@ -1,4 +1,3 @@
-
 class Math3d{
     constructor() {
         this.lookup_table = { cos: [], sin: [], }
@@ -21,8 +20,20 @@ class Math3d{
         if( vector1.y === 0 ){ vector1.y = 1 }
         vector1.z = vector1.z + s * ( vector1.y - vector1.z )
     }
+    angle_range( angle, min_angle = 0 , max_angle = 360, loop = true ){
+        if( loop ){
+            if( angle > max_angle ){ angle -= max_angle }
+            if( angle < min_angle ){ angle += max_angle }
+        }else{
+            if( angle > max_angle ){ angle = max_angle }
+            if( angle < min_angle ){ angle = min_angle }
+        }
+        return angle
+    }
+    confine( point, min, max ){
+        return Math.min( Math.max( point, min ), max )
+    }
 }
-const math_3d = new Math3d()
 
 class Screen{
     constructor( canvas, context, pixel_scale = 8 ){
@@ -50,9 +61,8 @@ class Screen{
         this.internal_width_2  = this.internal_width / 2
         this.internal_height_2 = this.internal_height / 2
     }
-    clear_background(){
-        let rgba  = [ 0, 60,  130, 1 ];
-        this.context.fillStyle = "rgba("+rgba[ 0 ]+","+rgba[ 1 ]+","+rgba[ 2 ]+","+rgba[ 3 ]+")"
+    clear_background( color = [ 0, 60,  130, 1 ] ){
+        this.context.fillStyle = "rgba("+color[ 0 ]+","+color[ 1 ]+","+color[ 2 ]+","+color[ 3 ]+")"
         this.context.fillRect( 0, 0, this.canvas.width, this.canvas.height )
     }
     draw_pixel( x, y, c ){
@@ -70,6 +80,36 @@ class Camera{
 
 }
 
+class Sector{
+    constructor( edges, bottom_z = 0, top_z = 40, bottom_color = 1, top_color = 1 ){
+        this.edges         = edges
+        this.bottom_z      = bottom_z
+        this.top_z         = top_z
+        this.bottom_color  = bottom_color
+        this.top_color     = top_color
+        this.surface       = {
+            state  : 0,
+            points : [],
+        }
+        this.distance      = 0
+    }
+    find_surface_state( camera_z ){
+        this.surface.state = ( this.bottom_z < camera_z ) ? ( this.top_z > camera_z ) ? 0 : 2 : 1
+    }
+    draw_sector( camera, screen ){
+        this.distance              = 0 // clear distance
+        this.surface.points.length = 0 // clear points
+        this.find_surface_state( camera.z_position )
+        for( let edge_index = 0; edge_index < this.edges.length; edge_index++ ){
+            this.edges[ edge_index ].collect_points( this, camera, screen )
+        }
+        for( let edge_index = 0; edge_index < this.edges.length; edge_index++ ){
+            this.edges[ edge_index ].draw_edge( this, camera, screen )
+        }
+        this.distance /= this.edges.length //find average sector distance ???
+    }
+}
+
 class Edge {
     constructor( x1, y1, x2, y2, color = 0, facing = 0 ){
         this.distance = 0
@@ -78,8 +118,14 @@ class Edge {
             new IntPoint( x1, y1 ),
             new IntPoint( x2, y2 ),
         ]
+        this.textures = {
+            up     : null,
+            middle : null,
+            down   : null,
+        },
         this.color  = color
     }
+
     points_to_vertices( parent_sector, camera, screen, point_1, point_2, update_distance = true  ) {
         // worlds position
         let tmp
@@ -131,6 +177,7 @@ class Edge {
 
         return [ vertex_1, vertex_2, vertex_3, vertex_4 ]
     }
+
     collect_points( parent_sector, camera, screen ){
 
         // offset bottom 2 points by camera
@@ -177,6 +224,7 @@ class Edge {
         }
 
     }
+
     draw_edge( parent_sector, camera, screen ){
 
         // offset bottom 2 points by camera
@@ -223,35 +271,7 @@ class Edge {
     }
 }
 
-class Sector{
-    constructor( edges, bottom_z = 0, top_z = 40, bottom_color = 1, top_color = 1 ){
-        this.edges         = edges
-        this.bottom_z      = bottom_z
-        this.top_z         = top_z
-        this.bottom_color  = bottom_color
-        this.top_color     = top_color
-        this.surface       = {
-            state  : 0,
-            points : [],
-        }
-        this.distance      = 0
-    }
-    find_surface_state( camera_z ){
-        this.surface.state = ( this.bottom_z < camera_z ) ? ( this.top_z > camera_z ) ? 0 : 2 : 1
-    }
-    draw_sector( camera, screen ){
-        this.distance              = 0 // clear distance
-        this.surface.points.length = 0 // clear points
-        this.find_surface_state( camera.z_position )
-        for( let edge_index = 0; edge_index < this.edges.length; edge_index++ ){
-            this.edges[ edge_index ].collect_points( this, camera, screen )
-        }
-        for( let edge_index = 0; edge_index < this.edges.length; edge_index++ ){
-            this.edges[ edge_index ].draw_edge( this, camera, screen )
-        }
-        this.distance /= this.edges.length //find average sector distance ???
-    }
-}
+
 
 class IntPoint{
     constructor( x, y ){
@@ -275,15 +295,28 @@ class IntVertex{
     //todo get distance from this
 }
 
+const math_3d = new Math3d()
+
 window.onload = ()=>{
+
+    const GAME_STATES = {
+        MENU   : 0,
+        GAME   : 1,
+        EDITOR : 2,
+    }
+    const CURSORS = {
+        ARROW : 0,
+        GRAB  : 1,
+    }
 
     // canvas stuff
     let canvas     = document.getElementById("mood")
     let context_2d = canvas.getContext( "2d" )
-    let screen     = new Screen( canvas, context_2d, 4 )
+    let screen     = new Screen( canvas, context_2d, 8 )
 
     //debug stuff
-    let debug = true
+    let debug          = true
+    let game_state     = GAME_STATES.GAME
     let map_context_2d = null
 
     // frame rule
@@ -302,11 +335,17 @@ window.onload = ()=>{
     }
 
     let keys = {
-        keys_press : {
+        keys_press        : {
             keys_up : new Set(),
             keys_down : new Set(),
         },
-        keys_map    : {
+        mouse_press       : {
+            buttons_up   : new Set(),
+            buttons_down : new Set(),
+        },
+        keys_map          : {
+            editor_mode  : [ 9 ],
+            game_mode    : [ 9 ],
             escape       : [ 27 ],
             enter        : [ 13 ],
             forward      : [ 87 ],
@@ -320,11 +359,15 @@ window.onload = ()=>{
             up           : [ 81 ],
             down         : [ 69 ],
         },
-        mouse_lock  : false,
-        mouse_movements : {
+        mouse_buttons_map : {
+            editor_grab : [ 0 ],
+        },
+        mouse_lock        : false,
+        mouse_movements   : {
             x : 0,
             y : 0,
         },
+
         resolve_keys : () => {
             //resolve mapped keys press
             Object.keys( keys.keys_map ).forEach( key => {
@@ -335,7 +378,16 @@ window.onload = ()=>{
                 if( key_down ){ keys.keys_status.add( key+"_down" ) }else{ keys.keys_status.delete( key+"_down" ) }
                 if( key_up ){ keys.keys_status.add( key+"_release" ) }else{ keys.keys_status.delete( key+"_release" ) }
             })
+            Object.keys( keys.mouse_buttons_map ).forEach( button => {
+                let key_down = true
+                let key_up   = true
+                keys.mouse_buttons_map[ button ].forEach( ( k ) => { if( ! keys.mouse_press.buttons_down.has( k ) ){ key_down = false } } )
+                keys.mouse_buttons_map[ button ].forEach( ( k ) => { if( ! keys.mouse_press.buttons_up.has( k ) ){ key_up = false } } )
+                if( key_down ){ keys.keys_status.add( button+"_down" ) }else{ keys.keys_status.delete( button+"_down" ) }
+                if( key_up ){ keys.keys_status.add( button+"_release" ) }else{ keys.keys_status.delete( button+"_release" ) }
+            })
             keys.keys_press.keys_up.clear()
+            keys.mouse_press.buttons_up.clear()
             keys.mouse_lock = ( document.pointerLockElement === canvas )
         },
         clear_mouse_movements  : () => {
@@ -343,8 +395,18 @@ window.onload = ()=>{
             keys.mouse_movements.y = 0
         },
         update_mouse_movements : ( event ) => {
+            console.log( event )
+            keys.mouse_buttons     = event.buttons
             keys.mouse_movements.x += event.movementX
             keys.mouse_movements.y += event.movementY
+        },
+        update_mouse_click_up : ( event ) => {
+            keys.mouse_press.buttons_up.add( event.button )
+            keys.mouse_press.buttons_down.delete( event.button )
+        },
+        update_mouse_click_down : ( event ) => {
+            keys.mouse_press.buttons_up.delete( event.button )
+            keys.mouse_press.buttons_down.add( event.button )
         },
         keys_status : new Set(),
     }
@@ -356,9 +418,18 @@ window.onload = ()=>{
         look_vertical   : 0,
     }
 
-    let map = {
-        size_x  : 750,
-        size_y  : 500,
+    let editor = {
+        unit      : 10,
+        grid_pos  : new IntPoint( 0, 0 ),
+        grid_size : 10*2,
+        cursor    : {
+            position : new IntPoint( screen.canvas.width / 2, screen.canvas.height / 2 ),
+        }
+    }
+
+    let level = {
+        size_x  : 7500,
+        size_y  : 5000,
         size_z  : 100,
         sectors : [
             new Sector(
@@ -413,17 +484,23 @@ window.onload = ()=>{
             }
             time.deltaTime = deltaT * time.timeScale
             time.time += time.deltaTime
+
             keys.resolve_keys()
-            move_player()
-            keys.clear_mouse_movements()
+            update_game_state()
+            update_movements( game_state )
+
             accumulator -= slice
         }
-        render()
+
+        render( game_state )
+
         if( debug ){ update_debug() }
+
         let current_second = Math.floor( performance.now() / 1000 )
         time.frame_count++
+
         if( time.last_second < current_second ){
-            time.last_second = current_second
+            time.last_second       = current_second
             time.last_frame_count = time.frame_count
             time.frame_count      = 0
         }
@@ -431,122 +508,42 @@ window.onload = ()=>{
         requestAnimationFrame( main_loop )
     }
 
-    const render = () => {
-        screen.clear_background()
-        // sort sector by distance
-        for( let i = 0; i < map.sectors.length - 1 ; i++ ){
-            for( let i2 = 0; i2 < map.sectors.length - i - 1; i2++ ){
-                if( map.sectors[ i2 ].distance < map.sectors[ i2+1 ].distance ){
-                    let swap            = map.sectors[ i2 ]
-                    map.sectors[ i2 ]   = map.sectors[ i2+1 ]
-                    map.sectors[ i2+1 ] = swap
-                }
-            }
-        }
-
-        // draw sector
-        for( let sector_index = 0; sector_index < map.sectors.length; sector_index++ ){
-            map.sectors[ sector_index ].draw_sector( player, screen )
+    const update_game_state = () => {
+        switch ( game_state ){
+            case GAME_STATES.GAME :
+                if( keys.keys_status.has( "editor_mode_release" ) ){ game_state = GAME_STATES.EDITOR }
+                break
+            case GAME_STATES.EDITOR :
+                if( keys.keys_status.has( "game_mode_release" ) ){ game_state = GAME_STATES.GAME }
+                break
         }
     }
 
-    const init_debug = () => {
-        let pre = document.createElement("pre" )
-        pre.style.position        = "absolute"
-        pre.style.display         = "block"
-        pre.style.top             = "50px"
-        pre.style.right           = "50px"
-        pre.style.backgroundColor = "#ffffff1f"
-        pre.style.margin          = "0px"
-        pre.style.padding         = "10px"
-        pre.innerHTML             += "Fps : <span id='frame_rate'></span><br>"
-        pre.innerHTML             += "viewport resolution : <span id='vp_res'></span><br>"
-        pre.innerHTML             += "Internal resolution : <span id='int_res'></span><br>"
-        pre.innerHTML             += "Pixel scale : <span id='p_scale'>"+screen.pixel_scale+"X</span><br>"
-
-        pre.innerHTML += "Keys press : <span id='keys'></span><br>"
-        pre.innerHTML += "Mouse : <span id='mouse'></span><br>"
-
-        let ratio = Math.min(200 / map.size_x, 200 / map.size_y );
-        let map_display_x = Math.round( map.size_x * ratio )
-        let map_display_y = Math.round( map.size_y * ratio )
-        pre.innerHTML += "<canvas id='map' width='"+map_display_x+"' height='"+map_display_y+"'></canvas>"
-        pre.innerHTML += "Player position : <br><span id='p_pos'></span><br><span id='p_ang'></span><br>"
-        document.body.append( pre )
-        map_context_2d = document.getElementById( "map" ).getContext( "2d" )
-        map_context_2d.strokeRect(0, 0, map_display_x, map_display_y )
-    }
-
-    const update_debug = () => {
-        document.getElementById("vp_res").innerHTML = "y-" + screen.canvas.width + " x-" + screen.canvas.height
-        document.getElementById("int_res").innerHTML = "y-" + screen.internal_width + " x-" + screen.internal_height
-        document.getElementById("frame_rate").innerHTML = time.last_frame_count
-        document.getElementById("keys").innerHTML = JSON.stringify( Array.from( keys.keys_status ).join(" ,<br>") )
-        document.getElementById("mouse").innerHTML =  "mouse "+( ( keys.mouse_lock ) ? "lock " : "unlock " )+"x-"+keys.mouse_movements.x+" y-"+keys.mouse_movements.y
-        document.getElementById("p_pos").innerHTML = "x-"+player.x_position+" y-"+player.y_position+" z-"+player.z_position
-        document.getElementById("p_ang").innerHTML = "h_angle-"+player.look_horizontal+" v_angle-"+player.look_vertical
-        let ratio = Math.min( 200 / map.size_x, 200 / map.size_y );
-        let map_display_x = Math.round( map.size_x * ratio )
-        let map_display_y = Math.round( map.size_y * ratio )
-        let x1            = Math.round( player.x_position / map.size_x * map_display_x )
-        let y1            = Math.round( ( map.size_y - player.y_position ) / map.size_y * map_display_y )
-        let map_look      = angle_range( player.look_horizontal - 90 )
-        let x2            = Math.round( x1 + 10 * math_3d.lookup_table.cos[ map_look ]  )
-        let y2            = Math.round( y1 + 10 * math_3d.lookup_table.sin[ map_look ] )
-
-        // clear map
-        map_context_2d.fillStyle = "rgba( 0, 0, 0 , 0)"
-        map_context_2d.strokeStyle = "rgba( 0, 0, 0 , 1)"
-        map_context_2d.clearRect(1, 1, map_display_x - 2, map_display_y - 2 );
-        map_context_2d.strokeRect(0, 0, map_display_x, map_display_y )
-        // wall
-        for( let sector_index = 0; sector_index < map.sectors.length; sector_index++ ){
-            for( let edge_index = 0; edge_index < map.sectors[ sector_index ].edges.length; edge_index++ ){
-                let wall_x1 = Math.round( ( map.sectors[ sector_index ].edges[ edge_index ].points[ 0 ].x ) * ratio )
-                let wall_y1 = Math.round( ( map.size_y - map.sectors[ sector_index ].edges[ edge_index ].points[ 0 ].y ) * ratio )
-                let wall_x2 = Math.round( ( map.sectors[ sector_index ].edges[ edge_index ].points[ 1 ].x ) * ratio )
-                let wall_y2 = Math.round( ( map.size_y - map.sectors[ sector_index ].edges[ edge_index ].points[ 1 ].y ) * ratio )
-                map_context_2d.beginPath();
-                map_context_2d.strokeStyle = "rgba( 245, 40, 145 , 1)"
-                map_context_2d.moveTo( wall_x1, wall_y1 );
-                map_context_2d.lineTo( wall_x2, wall_y2 );
-                map_context_2d.stroke();
-            }
+    const update_movements = ( state ) => {
+        switch ( state ){
+            case GAME_STATES.GAME :
+                update_game_movements()
+                break
+            case GAME_STATES.EDITOR :
+                update_editor_movements()
+                break
         }
-        // player pos
-        map_context_2d.beginPath();
-        map_context_2d.fillStyle = "rgba( 245, 40, 145 , 1)"
-        map_context_2d.arc( x1, y1, 2, 0, 2 * Math.PI, false );
-        map_context_2d.fill();
-        // arrow
-        map_context_2d.fillStyle = "rgba( 0, 0, 0 , 0)"
-        map_context_2d.strokeStyle = "rgba( 40, 40, 40 , 1)"
-        map_context_2d.beginPath();
-        map_context_2d.moveTo( x1, y1 );
-        map_context_2d.lineTo( x2, y2 );
-        map_context_2d.stroke();
-
     }
 
-    const angle_range = ( angle, min_angle = 0 , max_angle = 360, loop = true ) =>{
-        if( loop ){
-            if( angle > max_angle ){ angle -= max_angle }
-            if( angle < min_angle ){ angle += max_angle }
-        }else{
-            if( angle > max_angle ){ angle = max_angle }
-            if( angle < min_angle ){ angle = min_angle }
-        }
-        return angle
+    const update_editor_movements = () => {
+        editor.cursor.position.set_x( math_3d.confine( ( editor.cursor.position.x + keys.mouse_movements.x ), 0, screen.canvas.width ) )
+        editor.cursor.position.set_y( math_3d.confine( ( editor.cursor.position.y + keys.mouse_movements.y ), 0, screen.canvas.height ) )
+        keys.clear_mouse_movements()
     }
 
-    const move_player = () => {
+    const update_game_movements = () => {
         if( keys.mouse_lock ){
             player.look_horizontal += Math.round( keys.mouse_movements.x / 8 )
         }else{
             if( keys.keys_status.has( "look_left_down" ) ){ player.look_horizontal  -= 2 }
             if( keys.keys_status.has( "look_right_down" ) ){ player.look_horizontal += 2 }
         }
-        player.look_horizontal = angle_range( player.look_horizontal )
+        player.look_horizontal = math_3d.angle_range( player.look_horizontal )
 
         let delta_x = Math.round( math_3d.lookup_table.sin[ player.look_horizontal ] * 6.0 )
         let delta_y = Math.round( math_3d.lookup_table.cos[ player.look_horizontal ] * 6.0 )
@@ -557,7 +554,7 @@ window.onload = ()=>{
             if( keys.keys_status.has( "look_up_down" )  ){ player.look_vertical -= 1 }
             if( keys.keys_status.has( "look_down_down" )  ){ player.look_vertical  += 1 }
         }
-        player.look_vertical = angle_range( player.look_vertical, -90, 90, false )
+        player.look_vertical = math_3d.angle_range( player.look_vertical, -90, 90, false )
 
         if(
             keys.keys_status.has( "forward_down" )
@@ -592,27 +589,188 @@ window.onload = ()=>{
 
         if( player.x_position < 0 ){ player.x_position = 0 }
         if( player.y_position < 0 ){ player.y_position = 0 }
-        if( player.x_position > map.size_x ){ player.x_position = map.size_x }
-        if( player.y_position > map.size_y ){ player.y_position = map.size_y }
+        if( player.x_position > level.size_x ){ player.x_position = level.size_x }
+        if( player.y_position > level.size_y ){ player.y_position = level.size_y }
+        keys.clear_mouse_movements()
+    }
+
+    const render = () => {
+        switch ( game_state ){
+            case 0 :
+                break
+            case 1 :
+                render_game()
+                break
+            case 2 :
+                render_editor()
+                break
+        }
+    }
+
+    const render_game = () => {
+        screen.clear_background()
+        // sort sector by distance
+        for( let i = 0; i < level.sectors.length - 1 ; i++ ){
+            for( let i2 = 0; i2 < level.sectors.length - i - 1; i2++ ){
+                if( level.sectors[ i2 ].distance < level.sectors[ i2+1 ].distance ){
+                    let swap              = level.sectors[ i2 ]
+                    level.sectors[ i2 ]   = level.sectors[ i2+1 ]
+                    level.sectors[ i2+1 ] = swap
+                }
+            }
+        }
+
+        // draw sector
+        for( let sector_index = 0; sector_index < level.sectors.length; sector_index++ ){
+            level.sectors[ sector_index ].draw_sector( player, screen )
+        }
+    }
+
+    const render_editor = () => {
+        screen.clear_background( [ 0, 0, 0, 1 ] )
+        screen.context.strokeStyle = "rgba( 120, 120, 120, 1 )"
+        screen.context.lineWidth  = 1
+        let cursor_state = 0
+        let step_x = Math.round( screen.canvas.width / editor.grid_size ) + 1
+        let step_y = Math.round( screen.canvas.height / editor.grid_size ) + 1
+        for( let x = editor.grid_pos.x; x <= step_x; x++ ){
+            screen.context.moveTo( x * editor.grid_size, 0 )
+            screen.context.lineTo( x * editor.grid_size, screen.canvas.height )
+        }
+        for( let y = editor.grid_pos.y; y <= step_y; y++ ){
+            screen.context.moveTo( 0, y * editor.grid_size )
+            screen.context.lineTo( screen.canvas.width, y * editor.grid_size )
+        }
+        screen.context.stroke()
+        if( keys.keys_status.has( 'editor_grab_down' ) ){ cursor_state = 1 }
+        draw_cursor( cursor_state, editor.cursor.position.x, editor.cursor.position.y )
+    }
+
+    const draw_cursor = ( state, x, y ) => {
+        screen.context.strokeStyle = "rgb( 255, 255, 255, 1 )"
+        screen.context.fillStyle   = "rgb( 255, 255, 255, 1 )"
+        screen.context.beginPath()
+        switch( state ){
+            case CURSORS.GRAB :
+                screen.context.moveTo( x, y - 8 )
+                screen.context.lineTo( x , y + 8 )
+                screen.context.moveTo( x- 8, y )
+                screen.context.lineTo (x + 8, y )
+                break
+            default :
+                screen.context.moveTo( x, y )
+                screen.context.lineTo( x + 16, y + 6 )
+                screen.context.lineTo (x + 6, y + 16 )
+                break
+        }
+        screen.context.stroke()
+        screen.context.fill()
+    }
+
+    const init_debug = () => {
+        let pre = document.createElement("pre" )
+        pre.style.position        = "absolute"
+        pre.style.display         = "block"
+        pre.style.top             = "50px"
+        pre.style.right           = "50px"
+        pre.style.backgroundColor = "#ffffffff"
+        pre.style.margin          = "0px"
+        pre.style.padding         = "10px"
+        pre.innerHTML             += "Fps : <span id='frame_rate'></span><br>"
+        pre.innerHTML             += "Game state : <span id='game_state'></span><br>"
+        pre.innerHTML             += "viewport resolution : <span id='vp_res'></span><br>"
+        pre.innerHTML             += "Internal resolution : <span id='int_res'></span><br>"
+        pre.innerHTML             += "Pixel scale : <span id='p_scale'>"+screen.pixel_scale+"X</span><br>"
+
+        pre.innerHTML += "Keys press : <span id='keys'></span><br>"
+        pre.innerHTML += "Mouse position : <span id='mouse'></span><br>"
+        pre.innerHTML += "Cursor position : <span id='cursor'></span><br>"
+
+
+        let ratio = Math.min(200 / level.size_x, 200 / level.size_y );
+        let map_display_x = Math.round( level.size_x * ratio )
+        let map_display_y = Math.round( level.size_y * ratio )
+        pre.innerHTML += "<canvas id='map' width='"+map_display_x+"' height='"+map_display_y+"'></canvas>"
+        pre.innerHTML += "Player position : <br><span id='p_pos'></span><br><span id='p_ang'></span><br>"
+        document.body.append( pre )
+        map_context_2d = document.getElementById( "map" ).getContext( "2d" )
+        map_context_2d.strokeRect(0, 0, map_display_x, map_display_y )
+    }
+
+    const update_debug = () => {
+        document.getElementById("game_state").innerHTML = game_state
+        document.getElementById("vp_res").innerHTML = "y-" + screen.canvas.width + " x-" + screen.canvas.height
+        document.getElementById("int_res").innerHTML = "y-" + screen.internal_width + " x-" + screen.internal_height
+        document.getElementById("frame_rate").innerHTML = time.last_frame_count
+        document.getElementById("keys").innerHTML = JSON.stringify( Array.from( keys.keys_status ).join(" ,<br>") )
+        document.getElementById("mouse").innerHTML =  "mouse "+( ( keys.mouse_lock ) ? "lock " : "unlock " )+"x-"+keys.mouse_movements.x+" y-"+keys.mouse_movements.y
+        document.getElementById("cursor").innerHTML =  "x-"+editor.cursor.position.x+" y-"+editor.cursor.position.y
+        document.getElementById("p_pos").innerHTML = "x-"+player.x_position+" y-"+player.y_position+" z-"+player.z_position
+        document.getElementById("p_ang").innerHTML = "h_angle-"+player.look_horizontal+" v_angle-"+player.look_vertical
+        let ratio = Math.min( 200 / level.size_x, 200 / level.size_y );
+        let map_display_x = Math.round( level.size_x * ratio )
+        let map_display_y = Math.round( level.size_y * ratio )
+        let x1            = Math.round( player.x_position / level.size_x * map_display_x )
+        let y1            = Math.round( ( level.size_y - player.y_position ) / level.size_y * map_display_y )
+        let map_look      = math_3d.angle_range( player.look_horizontal - 90 )
+        let x2            = Math.round( x1 + 10 * math_3d.lookup_table.cos[ map_look ]  )
+        let y2            = Math.round( y1 + 10 * math_3d.lookup_table.sin[ map_look ] )
+
+        // clear map
+        map_context_2d.fillStyle = "rgba( 0, 0, 0 , 0)"
+        map_context_2d.strokeStyle = "rgba( 0, 0, 0 , 1)"
+        map_context_2d.clearRect(1, 1, map_display_x - 2, map_display_y - 2 )
+        map_context_2d.strokeRect(0, 0, map_display_x, map_display_y )
+        // wall
+        for( let sector_index = 0; sector_index < level.sectors.length; sector_index++ ){
+            for( let edge_index = 0; edge_index < level.sectors[ sector_index ].edges.length; edge_index++ ){
+                let wall_x1 = Math.round( ( level.sectors[ sector_index ].edges[ edge_index ].points[ 0 ].x ) * ratio )
+                let wall_y1 = Math.round( ( level.size_y - level.sectors[ sector_index ].edges[ edge_index ].points[ 0 ].y ) * ratio )
+                let wall_x2 = Math.round( ( level.sectors[ sector_index ].edges[ edge_index ].points[ 1 ].x ) * ratio )
+                let wall_y2 = Math.round( ( level.size_y - level.sectors[ sector_index ].edges[ edge_index ].points[ 1 ].y ) * ratio )
+                map_context_2d.beginPath()
+                map_context_2d.strokeStyle = "rgba( 245, 40, 145 , 1)"
+                map_context_2d.moveTo( wall_x1, wall_y1 )
+                map_context_2d.lineTo( wall_x2, wall_y2 )
+                map_context_2d.stroke()
+            }
+        }
+        // player pos
+        map_context_2d.beginPath();
+        map_context_2d.fillStyle = "rgba( 245, 40, 145 , 1)"
+        map_context_2d.arc( x1, y1, 2, 0, 2 * Math.PI, false )
+        map_context_2d.fill();
+        // arrow
+        map_context_2d.fillStyle = "rgba( 0, 0, 0 , 0)"
+        map_context_2d.strokeStyle = "rgba( 40, 40, 40 , 1)"
+        map_context_2d.beginPath();
+        map_context_2d.moveTo( x1, y1 );
+        map_context_2d.lineTo( x2, y2 );
+        map_context_2d.stroke();
+
     }
 
     //windows events
     window.addEventListener('resize', resize_canvas )
     window.addEventListener("keyup", ( event ) => {
-        //event.preventDefault()
+        event.preventDefault()
         keys.keys_press.keys_up.add( event.keyCode )
         keys.keys_press.keys_down.delete( event.keyCode )
     } )
     window.addEventListener("keydown", ( event ) => {
-        //event.preventDefault()
+        event.preventDefault()
         keys.keys_press.keys_down.add( event.keyCode )
         keys.keys_press.keys_up.delete( event.keyCode )
     } )
     document.addEventListener("pointerlockchange", () => {
         if( document.pointerLockElement ){
             document.addEventListener("mousemove", keys.update_mouse_movements, false )
+            document.addEventListener("mouseup", keys.update_mouse_click_up, false )
+            document.addEventListener("mousedown", keys.update_mouse_click_down, false )
         }else{
             document.removeEventListener("mousemove", keys.update_mouse_movements, false )
+            document.removeEventListener("mouseup", keys.update_mouse_click_up, false )
+            document.removeEventListener("mousedown", keys.update_mouse_click_down, false )
         }
     } )
     canvas.addEventListener( "click", async () => {
