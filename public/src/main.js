@@ -1,3 +1,6 @@
+import WadLoader from "./WadLoader.js"
+import Int2DVertex from "./data_type/Int2DVertex.js"
+
 class Math3d{
     constructor() {
         this.lookup_table = { cos: [], sin: [], }
@@ -115,8 +118,8 @@ class Edge {
         this.distance = 0
         this.facing   = 0
         this.points   = [
-            new IntPoint( x1, y1 ),
-            new IntPoint( x2, y2 ),
+            new Int2DVertex( x1, y1 ),
+            new Int2DVertex( x2, y2 ),
         ]
         this.textures = {
             up     : null,
@@ -130,25 +133,25 @@ class Edge {
         // worlds position
         let tmp
         tmp = point_1.y * math_3d.lookup_table.cos[ camera.look_horizontal ] + point_1.x * math_3d.lookup_table.sin[ camera.look_horizontal ]
-        let vertex_1 = new IntVertex(
+        let vertex_1 = new Int3DVertex(
             point_1.x * math_3d.lookup_table.cos[ camera.look_horizontal ] - point_1.y * math_3d.lookup_table.sin[ camera.look_horizontal ],
             tmp,
             parent_sector.bottom_z - camera.z_position + ((camera.look_vertical * tmp) / 32)
         )
         tmp = point_2.y * math_3d.lookup_table.cos[camera.look_horizontal] + point_2.x * math_3d.lookup_table.sin[ camera.look_horizontal ]
-        let vertex_2 = new IntVertex(
+        let vertex_2 = new Int3DVertex(
             point_2.x * math_3d.lookup_table.cos[camera.look_horizontal] - point_2.y * math_3d.lookup_table.sin[ camera.look_horizontal ],
             tmp,
             parent_sector.bottom_z - camera.z_position + ( ( camera.look_vertical * tmp ) / 32 )
         )
-        let vertex_3 = new IntVertex( vertex_1.x, vertex_1.y, vertex_1.z + parent_sector.top_z )
-        let vertex_4 = new IntVertex( vertex_2.x, vertex_2.y, vertex_2.z + parent_sector.top_z )
+        let vertex_3 = new Int3DVertex( vertex_1.x, vertex_1.y, vertex_1.z + parent_sector.top_z )
+        let vertex_4 = new Int3DVertex( vertex_2.x, vertex_2.y, vertex_2.z + parent_sector.top_z )
 
         // set distance before screen transformation
         if( update_distance ){
             this.distance = math_3d.get_distance(
-                new IntPoint( 0, 0 ),
-                new IntPoint( ( vertex_1.x + vertex_2.x ) / 2, ( vertex_1.y + vertex_1.y ) / 2 )
+                new Int2DVertex( 0, 0 ),
+                new Int2DVertex( ( vertex_1.x + vertex_2.x ) / 2, ( vertex_1.y + vertex_1.y ) / 2 )
             )
             parent_sector.distance = this.distance
         }
@@ -181,8 +184,8 @@ class Edge {
     collect_points( parent_sector, camera, screen ){
 
         // offset bottom 2 points by camera
-        let bottom_point_1 = new IntPoint( this.points[ 1 - this.facing ].x - camera.x_position, this.points[ 1 - this.facing ].y - camera.y_position )
-        let bottom_point_2 = new IntPoint( this.points[ 0 + this.facing ].x - camera.x_position, this.points[ 0 + this.facing ].y - camera.y_position )
+        let bottom_point_1 = new Int2DVertex( this.points[ 1 - this.facing ].x - camera.x_position, this.points[ 1 - this.facing ].y - camera.y_position )
+        let bottom_point_2 = new Int2DVertex( this.points[ 0 + this.facing ].x - camera.x_position, this.points[ 0 + this.facing ].y - camera.y_position )
         let vertices       = this.points_to_vertices( parent_sector, camera, screen, bottom_point_1, bottom_point_2, false )
 
         // nothing to collect
@@ -228,8 +231,8 @@ class Edge {
     draw_edge( parent_sector, camera, screen ){
 
         // offset bottom 2 points by camera
-        let bottom_point_1 = new IntPoint( this.points[ 0 + this.facing ].x - camera.x_position, this.points[ 0 + this.facing ].y - camera.y_position )
-        let bottom_point_2 = new IntPoint( this.points[ 1 - this.facing ].x - camera.x_position, this.points[ 1 - this.facing ].y - camera.y_position )
+        let bottom_point_1 = new Int2DVertex( this.points[ 0 + this.facing ].x - camera.x_position, this.points[ 0 + this.facing ].y - camera.y_position )
+        let bottom_point_2 = new Int2DVertex( this.points[ 1 - this.facing ].x - camera.x_position, this.points[ 1 - this.facing ].y - camera.y_position )
         let vertices = this.points_to_vertices( parent_sector, camera, screen, bottom_point_1, bottom_point_2 )
 
         // nothing to draw
@@ -271,19 +274,7 @@ class Edge {
     }
 }
 
-
-
-class IntPoint{
-    constructor( x, y ){
-        this.x = Math.round( x )
-        this.y = Math.round( y )
-    }
-    set_x( x ){ this.x = Math.round( x ) }
-    set_y( y ){ this.y = Math.round( y ) }
-    //todo get distance from this
-}
-
-class IntVertex{
+class Int3DVertex{
     constructor( x, y, z ){
         this.x = Math.round( x )
         this.y = Math.round( y )
@@ -293,6 +284,13 @@ class IntVertex{
     set_y( y ){ this.y = Math.round( y ) }
     set_z( z ){ this.x = Math.round( z ) }
     //todo get distance from this
+}
+
+class Level{
+    constructor( wad_loader_instance, map_name ){
+        let map_data = wad_loader_instance.get_map_data( map_name )
+        this.vertexes = map_data.vertexes
+    }
 }
 
 const math_3d = new Math3d()
@@ -312,7 +310,7 @@ window.onload = ()=>{
     // canvas stuff
     let canvas     = document.getElementById("mood")
     let context_2d = canvas.getContext( "2d" )
-    let screen     = new Screen( canvas, context_2d, 8 )
+    let screen     = new Screen( canvas, context_2d, 4 )
 
     //debug stuff
     let debug          = true
@@ -336,7 +334,7 @@ window.onload = ()=>{
 
     let keys = {
         keys_press        : {
-            keys_up : new Set(),
+            keys_up   : new Set(),
             keys_down : new Set(),
         },
         mouse_press       : {
@@ -360,12 +358,17 @@ window.onload = ()=>{
             down         : [ 69 ],
         },
         mouse_buttons_map : {
-            editor_grab : [ 0 ],
+            editor_grab     : [ 0 ],
+            mouse_middle    : [ 1 ],
+            mouse_right     : [ 2 ],
+            mouse_page_down : [ 3 ],
+            mouse_page_up   : [ 4 ],
         },
         mouse_lock        : false,
         mouse_movements   : {
-            x : 0,
-            y : 0,
+            x     : 0,
+            y     : 0,
+            wheel : 0,
         },
 
         resolve_keys : () => {
@@ -393,12 +396,15 @@ window.onload = ()=>{
         clear_mouse_movements  : () => {
             keys.mouse_movements.x = 0
             keys.mouse_movements.y = 0
+            keys.mouse_movements.wheel = 0
         },
         update_mouse_movements : ( event ) => {
-            console.log( event )
             keys.mouse_buttons     = event.buttons
             keys.mouse_movements.x += event.movementX
             keys.mouse_movements.y += event.movementY
+        },
+        update_mouse_wheel : ( event ) => {
+            keys.mouse_movements.wheel += event.deltaY
         },
         update_mouse_click_up : ( event ) => {
             keys.mouse_press.buttons_up.add( event.button )
@@ -417,16 +423,21 @@ window.onload = ()=>{
         look_horizontal : 0,
         look_vertical   : 0,
     }
-
     let editor = {
-        unit      : 10,
-        grid_pos  : new IntPoint( 0, 0 ),
-        grid_size : 10*2,
-        cursor    : {
-            position : new IntPoint( screen.canvas.width / 2, screen.canvas.height / 2 ),
+        grid_pos        : new Int2DVertex( 0, 0 ),
+        grid_zoom       : 10,
+        grid_scale      : function(){ return this.unit_pixel_size * this.grid_zoom },
+        unit_pixel_size : .1,
+        unit_by_ceil    : 100,
+        ceil_pixel_size : function(){ return this.unit_pixel_size * this.unit_by_ceil * this.grid_zoom },
+        cursor          : {
+            state    : null,
+            icon     : null,
+            position : new Int2DVertex( screen.canvas.width / 2, screen.canvas.height / 2 ),
         }
     }
-
+    let wad_loader = new WadLoader( [ './wads/DOOM1.WAD' ] )
+    let level_tmp   = new Level( wad_loader, 'E1M1' )
     let level = {
         size_x  : 7500,
         size_y  : 5000,
@@ -531,8 +542,13 @@ window.onload = ()=>{
     }
 
     const update_editor_movements = () => {
-        editor.cursor.position.set_x( math_3d.confine( ( editor.cursor.position.x + keys.mouse_movements.x ), 0, screen.canvas.width ) )
-        editor.cursor.position.set_y( math_3d.confine( ( editor.cursor.position.y + keys.mouse_movements.y ), 0, screen.canvas.height ) )
+        editor.cursor.position.set_x( math_3d.confine( editor.cursor.position.x + keys.mouse_movements.x, 0, screen.canvas.width ) )
+        editor.cursor.position.set_y( math_3d.confine( editor.cursor.position.y + keys.mouse_movements.y, 0, screen.canvas.height ) )
+        editor.grid_zoom = math_3d.confine( editor.grid_zoom - ( keys.mouse_movements.wheel / 100 ), 1, 20 )
+        if( keys.mouse_lock && keys.keys_status.has( "editor_grab_down" ) ){
+            editor.grid_pos.set_x( editor.grid_pos.x + ( keys.mouse_movements.x / editor.unit_pixel_size / editor.grid_zoom ) )
+            editor.grid_pos.set_y( editor.grid_pos.y + ( keys.mouse_movements.y / editor.unit_pixel_size / editor.grid_zoom ) )
+        }
         keys.clear_mouse_movements()
     }
 
@@ -631,17 +647,71 @@ window.onload = ()=>{
         screen.context.strokeStyle = "rgba( 120, 120, 120, 1 )"
         screen.context.lineWidth  = 1
         let cursor_state = 0
-        let step_x = Math.round( screen.canvas.width / editor.grid_size ) + 1
-        let step_y = Math.round( screen.canvas.height / editor.grid_size ) + 1
-        for( let x = editor.grid_pos.x; x <= step_x; x++ ){
-            screen.context.moveTo( x * editor.grid_size, 0 )
-            screen.context.lineTo( x * editor.grid_size, screen.canvas.height )
+        let screen_step_x = Math.ceil( screen.canvas.width / editor.ceil_pixel_size() )
+        let screen_step_y = Math.ceil( screen.canvas.height / editor.ceil_pixel_size() )
+        let pos_x_offset = editor.grid_pos.x
+        let pos_y_offset = editor.grid_pos.y
+        let pixel_x_offset  = pos_x_offset * editor.unit_pixel_size * editor.grid_zoom
+        let pixel_y_offset  = pos_y_offset * editor.unit_pixel_size * editor.grid_zoom
+        let pixel_grid_x_offset = pixel_x_offset % editor.ceil_pixel_size()
+        let pixel_grid_y_offset = pixel_y_offset % editor.ceil_pixel_size()
+        let ceil_x_offset = Math.floor( pos_x_offset / editor.unit_by_ceil )
+        let ceil_y_offset = Math.floor( pos_y_offset / editor.unit_by_ceil )
+
+        screen.context.font = "10px";
+        screen.context.fillStyle = "rgba( 255, 255, 255, 1 )"
+        screen.context.fillText( "x", 30 , 20 )
+        for( let x = 0; x <= screen_step_x; x++ ){
+            if( x > 1 ){ screen.context.fillText( ( x - ceil_x_offset ) * editor.unit_by_ceil, x * editor.ceil_pixel_size() + pixel_grid_x_offset, 20 ) }
+            screen.context.moveTo( x * editor.ceil_pixel_size() + pixel_grid_x_offset, 0 )
+            screen.context.lineTo( x * editor.ceil_pixel_size() + pixel_grid_x_offset , screen.canvas.height )
         }
-        for( let y = editor.grid_pos.y; y <= step_y; y++ ){
-            screen.context.moveTo( 0, y * editor.grid_size )
-            screen.context.lineTo( screen.canvas.width, y * editor.grid_size )
+        screen.context.fillText( "y", 20 , 30 )
+        for( let y = 0; y <= screen_step_y; y++ ){
+            if( y > 1 ){ screen.context.fillText( ( y - ceil_y_offset ) * editor.unit_by_ceil, 20, y * editor.ceil_pixel_size() + pixel_grid_y_offset ) }
+            screen.context.moveTo( 0,                y * editor.ceil_pixel_size() + pixel_grid_y_offset )
+            screen.context.lineTo( screen.canvas.width, y * editor.ceil_pixel_size() + pixel_grid_y_offset )
         }
         screen.context.stroke()
+        screen.context.fill()
+
+        if( level_tmp ){
+            screen.context.strokeStyle = "rgba( 200, 200, 200, 1 )"
+            screen.context.fillStyle = "rgba( 120, 120, 120 , 1 )"
+            level_tmp.vertexes.forEach( ( vertex ) => {
+                screen.context.beginPath()
+                screen.context.arc(
+                    vertex.x * editor.grid_scale() + pixel_x_offset,
+                    vertex.y * editor.grid_scale() + pixel_y_offset,
+                    2,
+                    0,
+                    2 * Math.PI,
+                    false
+                )
+                screen.context.stroke()
+                screen.context.fill()
+            } )
+            screen.context.strokeStyle = "rgba( 255, 0, 0, 1 )"
+            screen.context.fillStyle = "rgba( 255, 0, 0 , 1 )"
+
+            screen.context.beginPath()
+            console.log(
+                [
+                    level_tmp.vertexes[ 0 ].x * editor.grid_scale() + pixel_x_offset,
+                    level_tmp.vertexes[ 0 ].y * editor.grid_scale() + pixel_y_offset,
+                ]
+            )
+            screen.context.arc(
+                level_tmp.vertexes[ 0 ].x * editor.unit_pixel_size * editor.grid_zoom + pixel_x_offset,
+                level_tmp.vertexes[ 0 ].y * editor.unit_pixel_size * editor.grid_zoom + pixel_y_offset,
+                2,
+                0,
+                2 * Math.PI, false
+            )
+            screen.context.stroke()
+            screen.context.fill()
+        }
+
         if( keys.keys_status.has( 'editor_grab_down' ) ){ cursor_state = 1 }
         draw_cursor( cursor_state, editor.cursor.position.x, editor.cursor.position.y )
     }
@@ -736,17 +806,17 @@ window.onload = ()=>{
             }
         }
         // player pos
-        map_context_2d.beginPath();
+        map_context_2d.beginPath()
         map_context_2d.fillStyle = "rgba( 245, 40, 145 , 1)"
         map_context_2d.arc( x1, y1, 2, 0, 2 * Math.PI, false )
-        map_context_2d.fill();
+        map_context_2d.fill()
         // arrow
-        map_context_2d.fillStyle = "rgba( 0, 0, 0 , 0)"
-        map_context_2d.strokeStyle = "rgba( 40, 40, 40 , 1)"
-        map_context_2d.beginPath();
-        map_context_2d.moveTo( x1, y1 );
-        map_context_2d.lineTo( x2, y2 );
-        map_context_2d.stroke();
+        map_context_2d.fillStyle = "rgba( 0, 0, 0 , 0 )"
+        map_context_2d.strokeStyle = "rgba( 40, 40, 40 , 1 )"
+        map_context_2d.beginPath()
+        map_context_2d.moveTo( x1, y1 )
+        map_context_2d.lineTo( x2, y2 )
+        map_context_2d.stroke()
 
     }
 
@@ -765,10 +835,13 @@ window.onload = ()=>{
     document.addEventListener("pointerlockchange", () => {
         if( document.pointerLockElement ){
             document.addEventListener("mousemove", keys.update_mouse_movements, false )
+            document.addEventListener("wheel", keys.update_mouse_wheel, false )
             document.addEventListener("mouseup", keys.update_mouse_click_up, false )
             document.addEventListener("mousedown", keys.update_mouse_click_down, false )
+
         }else{
             document.removeEventListener("mousemove", keys.update_mouse_movements, false )
+            document.removeEventListener("wheel", keys.update_mouse_wheel, false )
             document.removeEventListener("mouseup", keys.update_mouse_click_up, false )
             document.removeEventListener("mousedown", keys.update_mouse_click_down, false )
         }
