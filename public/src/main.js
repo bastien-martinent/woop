@@ -1,42 +1,7 @@
 import WadLoader from "./WadLoader.js"
 import Int2DVertex from "./data_type/Int2DVertex.js"
-
-class Math3d{
-    constructor() {
-        this.lookup_table = { cos: [], sin: [], }
-        for( let x = 0; x < 360; x++ ){
-            this.lookup_table.cos[ x ] = Math.cos( x * Math.PI / 180 )
-            this.lookup_table.sin[ x ] = Math.sin( x * Math.PI / 180 )
-        }
-    }
-    get_distance( point_1, point_2 ){
-        return Math.round( Math.sqrt( Math.pow( point_2.x-point_1.x, 2 ) + Math.pow( ( point_2.y-point_1.y ), 2 ) ) )
-    }
-    clip_behind_player( vector1, vector2 ){
-        let distance_a = vector1.y
-        let distance_b = vector2.y
-        let distance  = distance_a - distance_b
-        if( distance === 0 ){ distance = 1 }
-        let s = distance_a / ( distance_a - distance_b )
-        vector1.x = vector1.x + s * ( vector2.x - vector1.x )
-        vector1.y = vector1.y + s * ( vector2.y - vector1.y )
-        if( vector1.y === 0 ){ vector1.y = 1 }
-        vector1.z = vector1.z + s * ( vector1.y - vector1.z )
-    }
-    angle_range( angle, min_angle = 0 , max_angle = 360, loop = true ){
-        if( loop ){
-            if( angle > max_angle ){ angle -= max_angle }
-            if( angle < min_angle ){ angle += max_angle }
-        }else{
-            if( angle > max_angle ){ angle = max_angle }
-            if( angle < min_angle ){ angle = min_angle }
-        }
-        return angle
-    }
-    confine( point, min, max ){
-        return Math.min( Math.max( point, min ), max )
-    }
-}
+import Edge from "./data_type/Edge.js"
+import Math3d from "./tool/Math3d.js"
 
 class Screen{
     constructor( canvas, context, pixel_scale = 8 ){
@@ -113,189 +78,22 @@ class Sector{
     }
 }
 
-class Edge {
-    constructor( x1, y1, x2, y2, color = 0, facing = 0 ){
-        this.distance = 0
-        this.facing   = 0
-        this.points   = [
-            new Int2DVertex( x1, y1 ),
-            new Int2DVertex( x2, y2 ),
-        ]
-        this.textures = {
-            up     : null,
-            middle : null,
-            down   : null,
-        },
-        this.color  = color
-    }
-
-    points_to_vertices( parent_sector, camera, screen, point_1, point_2, update_distance = true  ) {
-        // worlds position
-        let tmp
-        tmp = point_1.y * math_3d.lookup_table.cos[ camera.look_horizontal ] + point_1.x * math_3d.lookup_table.sin[ camera.look_horizontal ]
-        let vertex_1 = new Int3DVertex(
-            point_1.x * math_3d.lookup_table.cos[ camera.look_horizontal ] - point_1.y * math_3d.lookup_table.sin[ camera.look_horizontal ],
-            tmp,
-            parent_sector.bottom_z - camera.z_position + ((camera.look_vertical * tmp) / 32)
-        )
-        tmp = point_2.y * math_3d.lookup_table.cos[camera.look_horizontal] + point_2.x * math_3d.lookup_table.sin[ camera.look_horizontal ]
-        let vertex_2 = new Int3DVertex(
-            point_2.x * math_3d.lookup_table.cos[camera.look_horizontal] - point_2.y * math_3d.lookup_table.sin[ camera.look_horizontal ],
-            tmp,
-            parent_sector.bottom_z - camera.z_position + ( ( camera.look_vertical * tmp ) / 32 )
-        )
-        let vertex_3 = new Int3DVertex( vertex_1.x, vertex_1.y, vertex_1.z + parent_sector.top_z )
-        let vertex_4 = new Int3DVertex( vertex_2.x, vertex_2.y, vertex_2.z + parent_sector.top_z )
-
-        // set distance before screen transformation
-        if( update_distance ){
-            this.distance = math_3d.get_distance(
-                new Int2DVertex( 0, 0 ),
-                new Int2DVertex( ( vertex_1.x + vertex_2.x ) / 2, ( vertex_1.y + vertex_1.y ) / 2 )
-            )
-            parent_sector.distance = this.distance
-        }
-
-        // do not draw wall behind camera
-        if( vertex_1.y < 1 && vertex_2.y < 1 ){ return [] }
-        // clip wall partially behind camera
-        if( vertex_1.y < 1 ){
-            math_3d.clip_behind_player( vertex_1, vertex_2 ) //bottom line
-            math_3d.clip_behind_player( vertex_3, vertex_4 ) //top line
-        }
-        if( vertex_2.y < 1 ){
-            math_3d.clip_behind_player( vertex_2, vertex_1 ) //bottom line
-            math_3d.clip_behind_player( vertex_4, vertex_3 ) //top line
-        }
-
-        // screen x, screen y position
-        vertex_1.set_x( ( vertex_1.x * 200) / vertex_1.y + screen.internal_width_2 )
-        vertex_1.set_y( ( vertex_1.z * 200) / vertex_1.y + screen.internal_height_2 )
-        vertex_2.set_x( ( vertex_2.x * 200) / vertex_2.y + screen.internal_width_2 )
-        vertex_2.set_y( ( vertex_2.z * 200) / vertex_2.y + screen.internal_height_2 )
-        vertex_3.set_x( ( vertex_3.x * 200) / vertex_3.y + screen.internal_width_2 )
-        vertex_3.set_y( ( vertex_3.z * 200) / vertex_3.y + screen.internal_height_2 )
-        vertex_4.set_x( ( vertex_4.x * 200) / vertex_4.y + screen.internal_width_2 )
-        vertex_4.set_y( ( vertex_4.z * 200) / vertex_4.y + screen.internal_height_2 )
-
-        return [ vertex_1, vertex_2, vertex_3, vertex_4 ]
-    }
-
-    collect_points( parent_sector, camera, screen ){
-
-        // offset bottom 2 points by camera
-        let bottom_point_1 = new Int2DVertex( this.points[ 1 - this.facing ].x - camera.x_position, this.points[ 1 - this.facing ].y - camera.y_position )
-        let bottom_point_2 = new Int2DVertex( this.points[ 0 + this.facing ].x - camera.x_position, this.points[ 0 + this.facing ].y - camera.y_position )
-        let vertices       = this.points_to_vertices( parent_sector, camera, screen, bottom_point_1, bottom_point_2, false )
-
-        // nothing to collect
-        if( vertices.length === 0 ){ return }
-
-        let x1 = vertices[ 0 ].x
-        let x2 = vertices[ 1 ].x
-        let dyb = vertices[ 1 ].y - vertices[ 0 ].y // y distance of bottom line
-        let dyt = vertices[ 3 ].y - vertices[ 2 ].y // y distance of top line
-        let dx  = x2 - x1 // x distance
-        let xs  = x1      // hold initial x1 starting position
-
-        if( dx === 0 ){ dx = 1 } // do not divide by 0
-        // clip x
-        if( x1 < 0 ){ x1 = 0 }
-        if( x2 < 0 ){ x2 = 0 }
-        if( x1 > screen.internal_width - 1 ){ x1 = screen.internal_width - 1 }
-        if( x2 > screen.internal_width - 1 ){ x2 = screen.internal_width - 1 }
-
-        // draw x vertical lines
-        for( let x = x1; x < x2; x++ ){
-            // the y start and end point
-            let y1 = Math.round( dyb * ( x - xs + .5 ) / dx + vertices[ 0 ].y )
-            let y2 = Math.round( dyt * ( x - xs + .5 ) / dx + vertices[ 2 ].y )
-            // clip y
-            if( y1 < 0 ){ y1 = 0 }
-            if( y2 < 0 ){ y2 = 0 }
-            if( y1 > screen.internal_height - 1 ){ y1 = screen.internal_height - 1 }
-            if( y2 > screen.internal_height - 1 ){ y2 = screen.internal_height - 1 }
-            // save surface points
-            if( parent_sector.surface.state === 1 ){
-                parent_sector.surface.points[ x ] = y1
-                continue
-            }
-            if( parent_sector.surface.state === 2 ){
-                parent_sector.surface.points[ x ] = y2
-                continue
-            }
-        }
-
-    }
-
-    draw_edge( parent_sector, camera, screen ){
-
-        // offset bottom 2 points by camera
-        let bottom_point_1 = new Int2DVertex( this.points[ 0 + this.facing ].x - camera.x_position, this.points[ 0 + this.facing ].y - camera.y_position )
-        let bottom_point_2 = new Int2DVertex( this.points[ 1 - this.facing ].x - camera.x_position, this.points[ 1 - this.facing ].y - camera.y_position )
-        let vertices = this.points_to_vertices( parent_sector, camera, screen, bottom_point_1, bottom_point_2 )
-
-        // nothing to draw
-        if( vertices.length === 0 ){ return }
-
-
-        let x1 = vertices[ 0 ].x
-        let x2 = vertices[ 1 ].x
-        let dyb = vertices[ 1 ].y - vertices[ 0 ].y // y distance of bottom line
-        let dyt = vertices[ 3 ].y - vertices[ 2 ].y // y distance of top line
-        let dx  = x2 - x1 // x distance
-        let xs  = x1      // hold initial x1 starting position
-        // clip x
-        if( dx === 0 ){ dx = 1 }
-        if( x1 < 0 ){ x1 = 0 }
-        if( x2 < 0 ){ x2 = 0 }
-        if( x1 > screen.internal_width - 1 ){ x1 = screen.internal_width - 1 }
-        if( x2 > screen.internal_width - 1 ){ x2 = screen.internal_width - 1 }
-
-        // draw x vertical lines
-        for( let x = x1; x < x2; x++ ){
-            // the y start and end point
-            let y1 = Math.round( dyb * ( x - xs + .5 ) / dx + vertices[ 0 ].y )
-            let y2 = Math.round( dyt * ( x - xs + .5 ) / dx + vertices[ 2 ].y )
-            // clip y
-            if( y1 < 0 ){ y1 = 0 }
-            if( y2 < 0 ){ y2 = 0 }
-            if( y1 > screen.internal_height - 1 ){ y1 = screen.internal_height - 1 }
-            if( y2 > screen.internal_height - 1 ){ y2 = screen.internal_height - 1 }
-            // surface draw
-            if( parent_sector.surface.state === 1 ){
-                for( let y = parent_sector.surface.points[ x ]; y < y1; y++ ){ screen.draw_pixel( x, y, parent_sector.bottom_color ) }
-            }else if( parent_sector.surface.state === 2 ){
-                for( let y = y2; y < parent_sector.surface.points[ x ]; y++ ){ screen.draw_pixel( x, y, parent_sector.top_color ) }
-            }
-            for( let y = y1; y < y2; y++ ){ screen.draw_pixel( x, y, this.color ) }
-        }
-
-    }
-}
-
-class Int3DVertex{
-    constructor( x, y, z ){
-        this.x = Math.round( x )
-        this.y = Math.round( y )
-        this.z = Math.round( z )
-    }
-    set_x( x ){ this.x = Math.round( x ) }
-    set_y( y ){ this.y = Math.round( y ) }
-    set_z( z ){ this.x = Math.round( z ) }
-    //todo get distance from this
-}
-
 class Level{
     constructor( wad_loader_instance, map_name ){
         let map_data = wad_loader_instance.get_map_data( map_name )
         this.vertexes = map_data.vertexes
+        this.edges    = map_data.edges
+        this.sectors  = {}
+        this.size     = map_data.get_size()
+        this.boundary = map_data.get_boundary()
     }
 }
 
-const math_3d = new Math3d()
+
 
 window.onload = ()=>{
+
+    const math_3d = new Math3d()
 
     const GAME_STATES = {
         MENU   : 0,
@@ -313,7 +111,7 @@ window.onload = ()=>{
     let screen     = new Screen( canvas, context_2d, 4 )
 
     //debug stuff
-    let debug          = true
+    let debug          = false
     let game_state     = GAME_STATES.GAME
     let map_context_2d = null
 
@@ -423,8 +221,11 @@ window.onload = ()=>{
         look_horizontal : 0,
         look_vertical   : 0,
     }
-    let editor = {
-        grid_pos        : new Int2DVertex( 0, 0 ),
+
+    let wad_loader = new WadLoader( [ './wads/DOOM1.WAD' ] )
+    let level      = new Level( wad_loader, 'E1M1' )
+    let editor     = {
+        grid_pos        : level.boundary[ 1 ].clone(),
         grid_zoom       : 10,
         grid_scale      : function(){ return this.unit_pixel_size * this.grid_zoom },
         unit_pixel_size : .1,
@@ -435,47 +236,6 @@ window.onload = ()=>{
             icon     : null,
             position : new Int2DVertex( screen.canvas.width / 2, screen.canvas.height / 2 ),
         }
-    }
-    let wad_loader = new WadLoader( [ './wads/DOOM1.WAD' ] )
-    let level_tmp   = new Level( wad_loader, 'E1M1' )
-    let level = {
-        size_x  : 7500,
-        size_y  : 5000,
-        size_z  : 100,
-        sectors : [
-            new Sector(
-                [
-                    new Edge( 0, 0, 32, 0, 2 ),
-                    new Edge( 32, 0, 32, 32, 1 ),
-                    new Edge( 32, 32, 0, 32, 2 ),
-                    new Edge( 0, 32, 0, 0, 1 ),
-                ]
-            ),
-            new Sector(
-                [
-                    new Edge( 64, 0, 96, 0, 4 ),
-                    new Edge( 96, 0, 96, 32, 3 ),
-                    new Edge( 96, 32, 64, 32, 4 ),
-                    new Edge( 64, 32, 64, 0, 3 ),
-                ]
-            ),
-            new Sector(
-                [
-                    new Edge( 64, 64, 96, 64, 5 ),
-                    new Edge( 96, 64, 96, 96, 6 ),
-                    new Edge( 96, 96, 64, 96, 5 ),
-                    new Edge( 64, 96, 64, 64, 6 ),
-                ]
-            ),
-            new Sector(
-                [
-                    new Edge( 0, 64, 32, 64, 7 ),
-                    new Edge( 32, 64, 32, 96, 0 ),
-                    new Edge( 32, 96, 0, 96, 7 ),
-                    new Edge( 0, 96, 0, 64, 0 ),
-                ]
-            )
-        ]
     }
 
     const resize_canvas = () => {
@@ -546,8 +306,8 @@ window.onload = ()=>{
         editor.cursor.position.set_y( math_3d.confine( editor.cursor.position.y + keys.mouse_movements.y, 0, screen.canvas.height ) )
         editor.grid_zoom = math_3d.confine( editor.grid_zoom - ( keys.mouse_movements.wheel / 100 ), 1, 20 )
         if( keys.mouse_lock && keys.keys_status.has( "editor_grab_down" ) ){
-            editor.grid_pos.set_x( editor.grid_pos.x + ( keys.mouse_movements.x / editor.unit_pixel_size / editor.grid_zoom ) )
-            editor.grid_pos.set_y( editor.grid_pos.y + ( keys.mouse_movements.y / editor.unit_pixel_size / editor.grid_zoom ) )
+            editor.grid_pos.set_x( editor.grid_pos.x - ( keys.mouse_movements.x / editor.unit_pixel_size / editor.grid_zoom ) )
+            editor.grid_pos.set_y( editor.grid_pos.y - ( keys.mouse_movements.y / editor.unit_pixel_size / editor.grid_zoom ) )
         }
         keys.clear_mouse_movements()
     }
@@ -658,32 +418,44 @@ window.onload = ()=>{
         let ceil_x_offset = Math.floor( pos_x_offset / editor.unit_by_ceil )
         let ceil_y_offset = Math.floor( pos_y_offset / editor.unit_by_ceil )
 
+        //draw grid
         screen.context.font = "10px";
         screen.context.fillStyle = "rgba( 255, 255, 255, 1 )"
         screen.context.fillText( "x", 30 , 20 )
         for( let x = 0; x <= screen_step_x; x++ ){
-            if( x > 1 ){ screen.context.fillText( ( x - ceil_x_offset ) * editor.unit_by_ceil, x * editor.ceil_pixel_size() + pixel_grid_x_offset, 20 ) }
-            screen.context.moveTo( x * editor.ceil_pixel_size() + pixel_grid_x_offset, 0 )
-            screen.context.lineTo( x * editor.ceil_pixel_size() + pixel_grid_x_offset , screen.canvas.height )
+            if( x > 1 ){ screen.context.fillText( ( x + ceil_x_offset ) * editor.unit_by_ceil, x * editor.ceil_pixel_size() - pixel_grid_x_offset, 20 ) }
+            screen.context.moveTo( x * editor.ceil_pixel_size() - pixel_grid_x_offset, 0 )
+            screen.context.lineTo( x * editor.ceil_pixel_size() - pixel_grid_x_offset , screen.canvas.height )
         }
         screen.context.fillText( "y", 20 , 30 )
         for( let y = 0; y <= screen_step_y; y++ ){
-            if( y > 1 ){ screen.context.fillText( ( y - ceil_y_offset ) * editor.unit_by_ceil, 20, y * editor.ceil_pixel_size() + pixel_grid_y_offset ) }
-            screen.context.moveTo( 0,                y * editor.ceil_pixel_size() + pixel_grid_y_offset )
-            screen.context.lineTo( screen.canvas.width, y * editor.ceil_pixel_size() + pixel_grid_y_offset )
+            if( y > 1 ){ screen.context.fillText( ( y + ceil_y_offset ) * editor.unit_by_ceil, 20, y * editor.ceil_pixel_size() - pixel_grid_y_offset ) }
+            screen.context.moveTo( 0,                y * editor.ceil_pixel_size() - pixel_grid_y_offset )
+            screen.context.lineTo( screen.canvas.width, y * editor.ceil_pixel_size() - pixel_grid_y_offset )
         }
         screen.context.stroke()
         screen.context.fill()
 
-        if( level_tmp ){
-            screen.context.strokeStyle = "rgba( 200, 200, 200, 1 )"
-            screen.context.fillStyle = "rgba( 120, 120, 120 , 1 )"
-            level_tmp.vertexes.forEach( ( vertex ) => {
+        //draw level
+        if( level ){
+            //draw level boundary
+            screen.context.strokeStyle = "rgba( 255, 0, 0, 1 )"
+            screen.context.fillStyle = "rgba( 0, 0, 0 , 1 )"
+            screen.context.strokeRect(
+                level.boundary[ 1 ].x * editor.grid_scale() - pixel_x_offset,
+                level.boundary[ 1 ].y * editor.grid_scale() - pixel_y_offset,
+                level.size.x * editor.grid_scale(),
+                level.size.y * editor.grid_scale(),
+            )
+            //draw point
+            screen.context.strokeStyle = "rgba( 255, 255, 255, 1 )"
+            screen.context.fillStyle = "rgba( 100, 100, 100 , 0 )"
+            level.vertexes.forEach( ( vertex ) => {
                 screen.context.beginPath()
                 screen.context.arc(
-                    vertex.x * editor.grid_scale() + pixel_x_offset,
-                    vertex.y * editor.grid_scale() + pixel_y_offset,
-                    2,
+                    vertex.x * editor.grid_scale() - pixel_x_offset,
+                    vertex.y * editor.grid_scale() - pixel_y_offset,
+                    4,
                     0,
                     2 * Math.PI,
                     false
@@ -691,25 +463,19 @@ window.onload = ()=>{
                 screen.context.stroke()
                 screen.context.fill()
             } )
-            screen.context.strokeStyle = "rgba( 255, 0, 0, 1 )"
-            screen.context.fillStyle = "rgba( 255, 0, 0 , 1 )"
-
-            screen.context.beginPath()
-            console.log(
-                [
-                    level_tmp.vertexes[ 0 ].x * editor.grid_scale() + pixel_x_offset,
-                    level_tmp.vertexes[ 0 ].y * editor.grid_scale() + pixel_y_offset,
-                ]
-            )
-            screen.context.arc(
-                level_tmp.vertexes[ 0 ].x * editor.unit_pixel_size * editor.grid_zoom + pixel_x_offset,
-                level_tmp.vertexes[ 0 ].y * editor.unit_pixel_size * editor.grid_zoom + pixel_y_offset,
-                2,
-                0,
-                2 * Math.PI, false
-            )
-            screen.context.stroke()
-            screen.context.fill()
+            //draw edge
+            screen.context.strokeStyle = "rgba( 100, 100, 100, 1 )"
+            level.edges.forEach( ( edge ) => {
+                screen.context.moveTo(
+                    edge.vertexes[ 0 ].x * editor.grid_scale() - pixel_x_offset,
+                    edge.vertexes[ 0 ].y *  editor.grid_scale() - pixel_y_offset
+                )
+                screen.context.lineTo(
+                    edge.vertexes[ 1 ].x * editor.grid_scale() - pixel_x_offset,
+                    edge.vertexes[ 1 ].y * editor.grid_scale() - pixel_y_offset
+                )
+                screen.context.stroke()
+            } )
         }
 
         if( keys.keys_status.has( 'editor_grab_down' ) ){ cursor_state = 1 }

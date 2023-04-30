@@ -1,4 +1,6 @@
 import Int2DVertex from "./data_type/Int2DVertex.js"
+import Edge from "./data_type/Edge.js"
+import WadData from "./WadData.js";
 
 export default class WadLoader {
     constructor( file_paths = [] ){
@@ -187,30 +189,32 @@ export default class WadLoader {
     get_map_data( map_name, verbose = false ){
         let map_index = this.get_lump_index_by_name( map_name )
         if( -1 === map_index ){ return null }
-        let map_data = {
-            THINGS   : {},
-            LINEDEFS : {},
-            SIDEDEFS : {},
-            vertexes : this.read_4_bytes_vertexes_from_lump( map_index + this.MAP_LUMPS.VERTEXES ),
-            SEGS     : {},
-            SSECTORS : {},
-            NODES    : {},
-            SECTORS  : {},
-            REJECT   : {},
-            BLOCKMAP : {}
-        }
-        return map_data
+
+        return new WadData(
+            this.read_vertexes_from_lump( map_index ),
+            this.read_lindef_from_lump( map_index )
+        )
     }
 
-
-    read_4_bytes_vertexes_from_lump( lump_index ){
-        let lump = this.cache_lump( lump_index )
+    read_vertexes_from_lump( map_index ){
+        let lump = this.cache_lump( map_index + this.MAP_LUMPS.VERTEXES )
         let raw = new Int16Array( lump )
         let vertexes = []
-        for( let i = 0; i < raw.length; i = i+2 ){
-            vertexes.push( new Int2DVertex( raw[ i ], raw[ i+1 ] ) )
+        for( let i = 0; i < raw.length; ){
+            vertexes.push( new Int2DVertex( raw[ i++ ], raw[ i++ ] ) )
         }
         return vertexes
+    }
+
+    read_lindef_from_lump( map_index ){
+        let lump  = this.cache_lump( map_index + this.MAP_LUMPS.LINEDEFS )
+        let raw   = new Int16Array( lump )
+        let edges = []
+        let vertexes = this.read_vertexes_from_lump( map_index )
+        for( let i = 0; i < raw.length; i = i+7 ){
+            edges.push( new Edge(  vertexes[ raw[ i ] ],  vertexes[ raw[ i+1 ] ] ) )
+        }
+        return edges
     }
 
     cache_lump( lump_index, verbose = false ){
