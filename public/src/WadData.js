@@ -1,4 +1,4 @@
-import Int2DVertex from "./data_type/Int2DVertex.js"
+import Int2DVertex from "./type/Int2DVertex.js"
 
 export default class WadData {
     constructor( vertexes, edges ){

@@ -1,4 +1,4 @@
-export default class Math3d{
+export default class MathUtility {
     constructor() {
         this.lookup_table = { cos: [], sin: [], }
         for( let x = 0; x < 360; x++ ){
@@ -30,7 +30,11 @@ export default class Math3d{
         }
         return angle
     }
-    confine( point, min, max ){
-        return Math.min( Math.max( point, min ), max )
+    value_range( value, min, max, loop = false ){
+        if( loop ){
+            if( value > max ){ return min + ( value % max ) }
+            if( value > min ){ return max - ( value % max ) }
+        }
+        return Math.min( Math.max( value, min ), max )
     }
 }

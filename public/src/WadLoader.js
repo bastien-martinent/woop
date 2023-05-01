@@ -1,5 +1,5 @@
-import Int2DVertex from "./data_type/Int2DVertex.js"
-import Edge from "./data_type/Edge.js"
+import Int2DVertex from "./type/Int2DVertex.js"
+import Edge from "./type/Edge.js"
 import WadData from "./WadData.js";
 
 export default class WadLoader {

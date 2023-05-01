@@ -1,7 +1,7 @@
 import Int2DVertex from "./Int2DVertex.js"
 import Int3DVertex from "./Int3DVertex.js"
-import Math3d from "./../tool/Math3d.js"
-const math_3d = new Math3d()
+import MathUtility from "../MathUtility.js"
+const math_3d = new MathUtility()
 
 export default class Edge {
     constructor( vertex_start, vertex_end, color = 1, facing = 0 ){
