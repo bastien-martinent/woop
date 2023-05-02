@@ -17,7 +17,7 @@ export default class Sector{
     draw_sector( camera, screen ){
         this.distance              = 0 // clear distance
         this.surface.points.length = 0 // clear points
-        this.find_surface_state( camera.z_position )
+        this.find_surface_state( camera.position.z )
         for( let edge_index = 0; edge_index < this.edges.length; edge_index++ ){
             this.edges[ edge_index ].collect_points( this, camera, screen )
         }

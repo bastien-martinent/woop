@@ -5,6 +5,7 @@ export default class MathUtility {
             this.lookup_table.cos[ x ] = Math.cos( x * Math.PI / 180 )
             this.lookup_table.sin[ x ] = Math.sin( x * Math.PI / 180 )
         }
+        this.pi2 = 2 * Math.PI
     }
     get_distance( point_1, point_2 ){
         return Math.round( Math.sqrt( Math.pow( point_2.x-point_1.x, 2 ) + Math.pow( ( point_2.y-point_1.y ), 2 ) ) )

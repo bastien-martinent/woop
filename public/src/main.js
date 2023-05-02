@@ -1,7 +1,10 @@
 import WadLoader from "./WadLoader.js"
 import MathUtility from "./MathUtility.js"
-import Debugger from "./Debugger.js";
+import Debugger from "./Debugger.js"
 import Int2DVertex from "./type/Int2DVertex.js"
+import { Tree, Node } from "./bsp/Tree.js"
+import Player from "./Player.js"
+import Int3DVertex from "./type/Int3DVertex.js"
 
 const GAME_STATES = {
     MENU   : 0,
@@ -130,28 +133,44 @@ class Renderer{
         renderer.internal_height_2 = renderer.internal_height / 2
     }
 }
-class Player{}
 class Camera{}
 class Level{
     constructor(){
         this.name     = 'void'
-        this.vertexes = []
+        this.vertices = []
         this.edges    = []
+        this.segments = []
         this.sectors  = []
         this.size     = new Int2DVertex( 1,1 )
+        this.bsp_tree     = null
         this.boundary = [
             new Int2DVertex( 0,0 ),
             new Int2DVertex( 1,1 ),
         ]
+        this.player_start = {
+            position         : new Int3DVertex( 1,1, 20 ),
+            horizontal_angle : 0,
+            vertical_angle   : 0
+        }
     }
     load_from_wad( wad_loader, map_name ){
         let map_data = wad_loader.get_map_data( map_name )
-        this.name     = map_name
-        this.vertexes = map_data.vertexes
-        this.edges    = map_data.edges
-        this.sectors  = []
-        this.size     = map_data.get_size()
-        this.boundary = map_data.get_boundary()
+        this.name         = map_name
+        this.vertices     = map_data.get_vertices()
+        this.edges        = map_data.get_edges()
+        this.segments     = [] //map_data.get_segments()
+        this.sectors      = []
+        this.size         = map_data.get_size()
+        this.boundary     = map_data.get_boundary()
+        this.bsp_tree     = null
+        this.player_start = map_data.get_player_start()
+    }
+    spawn_player(){
+        return new Player(
+            this.player_start.position,
+            this.player_start.horizontal_angle,
+            this.player_start.vertical_angle
+        )
     }
 }
 class InputManager{
@@ -274,27 +293,23 @@ class InputManager{
 
 class Mood{
     constructor( canvas, options = {} ){
-        let render_mode = ( options.render !== undefined ) ? options.render : '2D'
-        let pixel_scale = ( options.scale !== undefined ) ? options.scale : 4
-        let debug       = ( options.debug !== undefined ) ? options.debug : false
+        let render_mode   = ( options.render !== undefined ) ? options.render : '2D'
+        let pixel_scale   = ( options.scale !== undefined ) ? options.scale : 4
+        let debug         = ( options.debug !== undefined ) ? options.debug : false
+
         this.game_state   = GAME_STATES.EDITOR
         this.math_utility = new MathUtility()
         this.renderer     = new Renderer( canvas, render_mode, pixel_scale )
         this.debbuger     = new Debugger( this, debug )
         this.inputs       = new InputManager( this )
+        this.wad_loader   = new WadLoader( [ './wads/DOOM1.WAD' ] )
+        this.level        = new Level()
 
-        this.player = {
-            x_position      : 1,
-            y_position      : 1,
-            z_position      : 20,
-            look_horizontal : 0,
-            look_vertical   : 0,
-        }
-        this.wad_loader = new WadLoader( [ './wads/DOOM1.WAD' ] )
-        this.level      = new Level()
         this.level.load_from_wad( this.wad_loader, 'E1M1' )
-        //TODO :: make object
-        this.game       = {
+        this.player       = this.level.spawn_player()
+
+        //TODO :: make objects
+        this.game         = {
             update : () => {
                 if( this.inputs.mouse_lock ){
                     this.player.look_horizontal += Math.round( this.inputs.mouse_movements.x / 8 )
@@ -319,35 +334,35 @@ class Mood{
                     this.inputs.input_status.has( "forward_down" )
                     && ! this.inputs.input_status.has( "look_up_down" )
                 ){
-                    this.player.x_position += delta_x
-                    this.player.y_position += delta_y
+                    this.player.position.x += delta_x
+                    this.player.position.y += delta_y
                 }
                 if(
                     this.inputs.input_status.has( "backward_down" )
                     && ! this.inputs.input_status.has( "look_down_down" )
                 ){
-                    this.player.x_position -= delta_x
-                    this.player.y_position -= delta_y
+                    this.player.position.x -= delta_x
+                    this.player.position.y -= delta_y
                 }
                 if(
                     this.inputs.input_status.has( "strafe_right_down" )
                     && ! this.inputs.input_status.has( "look_right_down" )
                 ){
-                    this.player.x_position += delta_y
-                    this.player.y_position -= delta_x
+                    this.player.position.x += delta_y
+                    this.player.position.y -= delta_x
                 }
                 if(
                     this.inputs.input_status.has( "strafe_left_down" )
                     && ! this.inputs.input_status.has( "look_left_down" )
                 ){
-                    this.player.x_position -= delta_y
-                    this.player.y_position += delta_x
+                    this.player.position.x -= delta_y
+                    this.player.position.y += delta_x
                 }
-                if( this.inputs.input_status.has( "up_down" ) ){ this.player.z_position += 4 }
-                if( this.inputs.input_status.has( "down_down" ) ){ this.player.z_position -= 4 }
+                if( this.inputs.input_status.has( "up_down" ) ){ this.player.position.z += 4 }
+                if( this.inputs.input_status.has( "down_down" ) ){ this.player.position.z -= 4 }
 
-                this.player.x_position = this.math_utility.value_range( this.player.y_position, 0, this.level.size.x  )
-                this.player.y_position = this.math_utility.value_range( this.player.y_position, 0, this.level.size.x  )
+                //this.player.position.x = this.math_utility.value_range( this.player.position.y, 0, this.level.size.x  )
+                //this.player.position.y = this.math_utility.value_range( this.player.position.y, 0, this.level.size.x  )
             },
             render : ( renderer ) => {
                 renderer.clear_background()
@@ -368,7 +383,7 @@ class Mood{
                 }
             }
         }
-        this.editor     = {
+        this.editor       = {
             grid_pos        : this.level.boundary[ 1 ].clone(),
             grid_zoom       : 20,
             grid_scale      : () => { return this.editor.unit_pixel_size * this.editor.grid_zoom },
@@ -448,8 +463,7 @@ class Mood{
                 if( zero_lines.length > 0 ){
                     renderer.context.beginPath()
                     renderer.context.lineWidth   = 2
-                    renderer.context.fillStyle   = "rgba( 90, 90, 90, 1 )"
-                    renderer.context.strokeStyle = "rgba( 90, 0 , 0, 1 )"
+                    renderer.context.strokeStyle = "rgba( 120, 0 , 0, 1 )"
                     zero_lines.forEach( ( p ) => {
                         renderer.context.moveTo( p[ 0 ], p[ 1 ] )
                         renderer.context.lineTo( p[ 2 ], p[ 3 ] )
@@ -460,43 +474,80 @@ class Mood{
                 //draw level
                 if( this.level ){
                     //draw level boundary
-                    renderer.context.strokeStyle = "rgba( 255, 0, 0, 1 )"
-                    renderer.context.fillStyle = "rgba( 0, 0, 0 , 1 )"
+                    renderer.context.strokeStyle = "rgba( 20, 90, 0, 1 )"
+                    renderer.context.fillStyle   = "rgba( 0, 0, 0 , 1 )"
                     renderer.context.strokeRect(
                         this.level.boundary[ 1 ].x * this.editor.grid_scale() - pixel_x_offset,
                         this.level.boundary[ 1 ].y * this.editor.grid_scale() - pixel_y_offset,
                         this.level.size.x * this.editor.grid_scale(),
                         this.level.size.y * this.editor.grid_scale(),
                     )
+
                     //draw point
                     renderer.context.strokeStyle = "rgba( 255, 255, 255, 1 )"
                     renderer.context.fillStyle   = "rgba( 100, 100, 100 ,.6 )"
-                    this.level.vertexes.forEach( ( vertex ) => {
+                    this.level.vertices.forEach( ( vertex ) => {
                         renderer.context.beginPath()
                         renderer.context.arc(
                             vertex.x * this.editor.grid_scale() - pixel_x_offset,
                             vertex.y * this.editor.grid_scale() - pixel_y_offset,
                             4,
                             0,
-                            2 * Math.PI,
+                            this.math_utility.pi2,
                             false
                         )
                         renderer.context.stroke()
                         renderer.context.fill()
                     } )
+
                     //draw edge
                     renderer.context.strokeStyle = "rgba( 100, 100, 100, 1 )"
                     renderer.context.beginPath()
                     this.level.edges.forEach( ( edge ) => {
                         renderer.context.moveTo(
-                            edge.vertexes[ 0 ].x * this.editor.grid_scale() - pixel_x_offset,
-                            edge.vertexes[ 0 ].y * this.editor.grid_scale() - pixel_y_offset
+                            edge.vertices[ 0 ].x * this.editor.grid_scale() - pixel_x_offset,
+                            edge.vertices[ 0 ].y * this.editor.grid_scale() - pixel_y_offset
                         )
                         renderer.context.lineTo(
-                            edge.vertexes[ 1 ].x * this.editor.grid_scale() - pixel_x_offset,
-                            edge.vertexes[ 1 ].y * this.editor.grid_scale() - pixel_y_offset
+                            edge.vertices[ 1 ].x * this.editor.grid_scale() - pixel_x_offset,
+                            edge.vertices[ 1 ].y * this.editor.grid_scale() - pixel_y_offset
                         )
                     } )
+                    renderer.context.stroke()
+
+                    //draw segment
+                    renderer.context.strokeStyle = "rgb( 80, 160, 80, 1 )"
+                    renderer.context.beginPath()
+                    this.level.segments.forEach( ( segment ) => {
+                        renderer.context.moveTo(
+                            segment.vertices[ 0 ].x * this.editor.grid_scale() - pixel_x_offset,
+                            segment.vertices[ 0 ].y * this.editor.grid_scale() - pixel_y_offset
+                        )
+                        renderer.context.lineTo(
+                            segment.vertices[ 1 ].x * this.editor.grid_scale() - pixel_x_offset,
+                            segment.vertices[ 1 ].y * this.editor.grid_scale() - pixel_y_offset
+                        )
+                    } )
+                    renderer.context.stroke()
+                }
+
+                if( this.player ){
+                    //draw player
+                    let player_position_x        = this.player.position.x * this.editor.grid_scale() - pixel_x_offset
+                    let player_position_y        = this.player.position.y * this.editor.grid_scale() - pixel_y_offset
+                    renderer.context.strokeStyle = "rgba( 90, 5, 5, 1 )"
+                    renderer.context.fillStyle   = "rgba( 90, 5, 5, .6 )"
+                    renderer.context.beginPath()
+                    renderer.context.arc( player_position_x, player_position_y, 6, 0, this.math_utility.pi2, false )
+                    renderer.context.stroke()
+                    renderer.context.fill()
+                    renderer.context.lineWidth   = 4
+                    renderer.context.beginPath()
+                    renderer.context.moveTo( player_position_x, player_position_y )
+                    renderer.context.lineTo(
+                        Math.round( player_position_x + 30 * this.math_utility.lookup_table.cos[ this.player.look_horizontal ] ),
+                        Math.round( player_position_y + 30 * this.math_utility.lookup_table.sin[ this.player.look_horizontal ] )
+                    )
                     renderer.context.stroke()
                 }
 
@@ -521,6 +572,7 @@ class Mood{
             last_frame_count  : 0,
             last_second       : 0,
         }
+
         this.mood_loop( this )
     }
 
@@ -537,9 +589,7 @@ class Mood{
             mood.time.unscaledDeltaTime = ( performance.now() / 1000 ) - mood.time.unscaledTime
             mood.time.unscaledTime      += mood.time.unscaledDeltaTime
             let deltaT = mood.time.unscaledDeltaTime
-            if( deltaT > mood.time.maximumDeltaTime ){
-                deltaT = mood.time.maximumDeltaTime
-            }
+            if( deltaT > mood.time.maximumDeltaTime ){ deltaT = mood.time.maximumDeltaTime }
             mood.time.deltaTime = deltaT * mood.time.timeScale
             mood.time.time      += mood.time.deltaTime
             mood.inputs.resolve_keys()
@@ -548,12 +598,12 @@ class Mood{
             mood.debbuger.update()
             mood.inputs.clear_mouse_movements()
             accumulator -= slice
+            mood.time.frame_count++ // what what what ???
         }
 
         mood.render()
         mood.debbuger.render()
 
-        mood.time.frame_count++
         if( mood.time.last_second < current_second ){
             mood.time.last_second       = current_second
             mood.time.last_frame_count = mood.time.frame_count

@@ -16,8 +16,6 @@ export default class WadLoader {
             'REJECT'   : 9,
             'BLOCKMAP' : 10,
         }
-        this.decoder         = new TextDecoder()
-        this.endianness      = this.check_endianness()
         this.cache           = []
         this.wads            = []
         this.lumps_count     = 0
@@ -27,47 +25,15 @@ export default class WadLoader {
         }
     }
 
-    check_endianness() {
-        let array8  = new Uint8Array( [ 0x00, 0x01 ] )
-        let array16 = new Uint16Array( array8.buffer )
-        switch( array16[0] ){
-            case 0x0001:
-                return "big"
-            case 0x0100:
-                return "little"
-        }
+    get_int8( buffer, position ){
+        return new Int8Array( buffer, position, 1 )[0]
     }
-
-    get_int32( buffer, position, bytes, endian ){
-        try {
-            return this.CorrectInt16Endianness( new Int32Array( buffer, position, 1 )[0], endian )
-        }catch( e ){
-            return this.CorrectInt16Endianness( new Int32Array( buffer.slice( position, position + bytes ), 0, 1 )[0], endian )
-        }
+    get_int16( buffer, position ){
+        return new Int16Array( buffer, position, 1 )[0]
     }
-
-    CorrectInt16Endianness( value, endian ){
-        if( endian == this.endianness ){ return value }
-        if( value > 32767 || value < -32768 ){ throw new Error( "Value out of bound" ) }
-        let r = value
-        if( r < 0 ){ r += 65536 }
-        r = this.CorrectUint16Endianness( value, endian )
-        if( r > 32767 ){ r -= 65536 }
-        return r
+    get_int32( buffer, position ){
+        return new Int32Array( buffer, position, 1 )[0]
     }
-
-    CorrectUint16Endianness( value, endian ){
-        if( endian == this.endianness ){ return value }
-        if( value > 0xFFFF || value < 0x0000){ throw new Error( "Value out of bound" ) }
-        return ( ( value & 0xFF ) << 8 ) | ( ( value >> 8 ) & 0xFF )
-    }
-
-    //keep it in case
-    vanilla_decoder( buffer ){
-        return this.decoder.decode( buffer )
-    }
-
-    //faster but may not work properly
     ascii_decoder( buffer, offset = 0 ){
         let return_string = ""
         let end = buffer.byteLength
@@ -91,31 +57,42 @@ export default class WadLoader {
 
     read_bytes(  buffer, offset, bytes_length, output_type ){
         switch ( output_type ){
-            case "int32" : return this.get_int32( buffer, offset, bytes_length,"little" ); break;
-            default      : return new Uint8Array( buffer, offset, bytes_length ); break;
+            case "int8"    :
+                return this.get_int16( buffer, offset );
+                break;
+            case "int16"    :
+                return this.get_int16( buffer, offset  );
+                break;
+            case "int16[4]" :
+                return [
+                    this.get_int16( buffer, offset ),
+                    this.get_int16( buffer, offset + 2 ),
+                    this.get_int16( buffer, offset + 4 ),
+                    this.get_int16( buffer, offset + 6 )
+                ]
+                break;
+            case "int32"    :
+                return this.get_int32( buffer, offset, 4 );
+                break;
+            default         : //string
+                return new Uint8Array( buffer, offset, bytes_length );
         }
     }
-    read_1_byte(  buffer, offset, output_type = 'int32' ){
+    read_1_byte(  buffer, offset, output_type = 'int8' ){
         return this.read_bytes( buffer, offset, 1, output_type )
     }
-    read_2_bytes( buffer, offset, output_type = 'int32' ){
+    read_2_bytes( buffer, offset, output_type = 'int16' ){
         return this.read_bytes( buffer, offset, 2, output_type )
     }
     read_4_bytes( buffer, offset, output_type = 'int32' ){
         return this.read_bytes( buffer, offset, 4, output_type )
     }
-
+    read_8_bytes( buffer, offset, output_type = 'int32[4]' ){
+        return this.read_bytes( buffer, offset, 8, output_type )
+    }
     read_string( buffer, offset, bytes_length ){
         let ascii_string = this.read_bytes( buffer, offset, bytes_length )
         return this.ascii_decoder( ascii_string ).replace(/\x00*/g, "")
-    }
-
-    get_file_base_name( file_path ){
-        let base_name = file_path.toString().match(/.*\/(.+?)\./)[1].toUpperCase();
-        if( base_name.length > 8 ){
-            console.log( "Filename base of " + file_path + " >8 chars" )
-        }
-        return base_name
     }
 
     add_wad( file_path ){
@@ -189,32 +166,142 @@ export default class WadLoader {
     get_map_data( map_name, verbose = false ){
         let map_index = this.get_lump_index_by_name( map_name )
         if( -1 === map_index ){ return null }
-
         return new WadData(
-            this.read_vertexes_from_lump( map_index ),
-            this.read_lindef_from_lump( map_index )
+            this.read_things_from_lump( map_index ),
+            this.read_lindefs_from_lump( map_index ),
+            this.read_sidedef_from_lump( map_index ),
+            this.read_vertices_from_lump( map_index ),
+            this.read_segs_from_lump( map_index ),
+            this.read_ssectors_from_lump( map_index ),
+            this.read_nodes_from_lump( map_index ),
+            this.read_sectors_from_lump( map_index ),
+            this.read_reject_from_lump( map_index ),
+            this.read_blockmap_from_lump( map_index )
         )
     }
 
-    read_vertexes_from_lump( map_index ){
-        let lump = this.cache_lump( map_index + this.MAP_LUMPS.VERTEXES )
-        let raw = new Int16Array( lump )
-        let vertexes = []
-        for( let i = 0; i < raw.length; ){
-            vertexes.push( new Int2DVertex( raw[ i++ ], raw[ i++ ] ) )
+    read_things_from_lump( map_index ){
+        let lump   = this.cache_lump( map_index + this.MAP_LUMPS.THINGS )
+        let things = []
+        for( let i = 0; i < lump.byteLength; i = i + 10 ){
+            things.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ),  //x position
+                this.read_2_bytes( lump, i+2, 'int16' ),  //y position
+                this.read_2_bytes( lump, i+4, 'int16' ),  //Angle facing
+                this.read_2_bytes( lump, i+6, 'int16' ),  //DoomEd thing type
+                this.read_2_bytes( lump, i+8, 'int16' )   //Flags
+            ] )
         }
-        return vertexes
+        return things
     }
-
-    read_lindef_from_lump( map_index ){
-        let lump  = this.cache_lump( map_index + this.MAP_LUMPS.LINEDEFS )
-        let raw   = new Int16Array( lump )
-        let edges = []
-        let vertexes = this.read_vertexes_from_lump( map_index )
-        for( let i = 0; i < raw.length; i = i+7 ){
-            edges.push( new Edge(  vertexes[ raw[ i ] ],  vertexes[ raw[ i+1 ] ] ) )
+    read_lindefs_from_lump( map_index ){
+        let lump    = this.cache_lump( map_index + this.MAP_LUMPS.LINEDEFS )
+        let lindefs = []
+        for( let i = 0; i < lump.byteLength; i = i + 14 ){
+            lindefs.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ),  //Start Vertex index
+                this.read_2_bytes( lump, i+2, 'int16' ),  //End Vertex index
+                this.read_2_bytes( lump, i+4, 'int16' ),  //Flags
+                this.read_2_bytes( lump, i+6, 'int16' ),  //Special Type
+                this.read_2_bytes( lump, i+8, 'int16' ),  //Sector Tag
+                this.read_2_bytes( lump, i+10, 'int16' ), //Front Sidedef index
+                this.read_2_bytes( lump, i+12, 'int16' )  //Back Sidedef index
+            ] )
         }
-        return edges
+        return lindefs
+    }
+    read_sidedef_from_lump( map_index ){
+        let lump  = this.cache_lump( map_index + this.MAP_LUMPS.SIDEDEFS )
+        let sidedefs = []
+        for( let i = 0; i < lump.byteLength; i = i + 30 ){
+            sidedefs.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ), //x offset
+                this.read_2_bytes( lump, i+2, 'int16' ), //y offset
+                this.read_string( lump, i+4, 8 ),        //Name of upper texture
+                this.read_string( lump, i+12, 8 ),       //Name of lower texture
+                this.read_string( lump, i+20, 8 ),       //Name of middle texture
+                this.read_2_bytes( lump, i+28, 'int16' ) //Sector number this sidedef 'faces'
+            ] )
+        }
+        return sidedefs
+    }
+    read_vertices_from_lump( map_index ){
+        let lump     = this.cache_lump( map_index + this.MAP_LUMPS.VERTEXES )
+        let vertices = []
+        for( let i = 0; i < lump.byteLength; i = i+4 ){
+            vertices.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ), //x position
+                this.read_2_bytes( lump, i+2, 'int16' )  //y position
+            ] )
+        }
+        return vertices
+    }
+    read_segs_from_lump( map_index ){
+        let lump = this.cache_lump( map_index + this.MAP_LUMPS.SEGS )
+        let segs = []
+        for( let i = 0; i < lump.byteLength; i = i+12 ){
+            segs.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ), //Starting vertex index
+                this.read_2_bytes( lump, i+2, 'int16' ), //Ending vertex index
+                this.read_2_bytes( lump, i+4, 'int16' ), //Angle, full circle is -32768 to 32767.
+                this.read_2_bytes( lump, i+6, 'int16' ), //Linedef index
+                this.read_2_bytes( lump, i+8, 'int16' ), //Direction // 0 (same as linedef) or 1 (opposite of linedef)
+                this.read_2_bytes( lump, i+10, 'int16' ) //Offset    // distance along linedef to start of seg
+            ] )
+        }
+        return segs
+    }
+    read_ssectors_from_lump( map_index ){
+        let lump = this.cache_lump( map_index + this.MAP_LUMPS.SSECTORS )
+        let ssectors = []
+        for( let i = 0; i < lump.byteLength; i = i+4 ){
+            ssectors.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ), //Seg count
+                this.read_2_bytes( lump, i+2, 'int16' )  //First seg number
+            ] )
+        }
+        return ssectors
+    }
+    read_nodes_from_lump( map_index ){
+        let lump   = this.cache_lump( map_index + this.MAP_LUMPS.NODES )
+        let nodes  = []
+        for( let i = 0; i < lump.byteLength; i = i + 28 ){
+            nodes.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ),     //x coordinate of partition line start
+                this.read_2_bytes( lump, i+2, 'int16' ),     //y coordinate of partition line start
+                this.read_2_bytes( lump, i+4, 'int16' ),     //Change in x from start to end of partition line
+                this.read_2_bytes( lump, i+6, 'int16' ),     //Change in y from start to end of partition line
+                this.read_8_bytes( lump, i+8, 'int16[4]' ),  //Right bounding box
+                this.read_8_bytes( lump, i+16, 'int16[4]' ), //Left bounding box
+                this.read_2_bytes( lump, i+24, 'int16' ),    //Right child
+                this.read_2_bytes( lump, i+26, 'int16' )     //Left child
+            ] )
+        }
+        return nodes
+    }
+    read_sectors_from_lump( map_index ){
+        let lump = this.cache_lump( map_index + this.MAP_LUMPS.SECTORS )
+        let sectors = []
+        for( let i = 0; i < lump.byteLength; i = i+26 ){
+            sectors.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ),  //Floor height
+                this.read_2_bytes( lump, i+2, 'int16' ),  //Ceiling height
+                this.read_string( lump, i+4, 8 ),         //Name of floor texture
+                this.read_string( lump, i+12, 8 ),        //Name of ceiling texture
+                this.read_2_bytes( lump, i+20, 'int16' ), //Light level
+                this.read_2_bytes( lump, i+22, 'int16' ), //Special Type
+                this.read_2_bytes( lump, i+24, 'int16' )  //Tag number
+            ] )
+        }
+        return sectors
+    }
+    read_reject_from_lump( map_index ){
+        let lump = this.cache_lump( map_index + this.MAP_LUMPS.REJECT )
+        return lump
+    }
+    read_blockmap_from_lump( map_index ){
+        let lump = this.cache_lump( map_index + this.MAP_LUMPS.BLOCKMAP )
+        return lump
     }
 
     cache_lump( lump_index, verbose = false ){

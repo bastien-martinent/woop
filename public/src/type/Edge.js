@@ -7,7 +7,7 @@ export default class Edge {
     constructor( vertex_start, vertex_end, color = 1, facing = 0 ){
         this.distance = 0
         this.facing   = 0
-        this.vertexes = [ vertex_start, vertex_end ]
+        this.vertices = [ vertex_start, vertex_end ]
         this.textures = {
             up     : null,
             middle : null,
@@ -22,13 +22,13 @@ export default class Edge {
         let vertex_1 = new Int3DVertex(
             point_1.x * math_3d.lookup_table.cos[ camera.look_horizontal ] - point_1.y * math_3d.lookup_table.sin[ camera.look_horizontal ],
             tmp,
-            parent_sector.bottom_z - camera.z_position + ((camera.look_vertical * tmp) / 32)
+            parent_sector.bottom_z - camera.position.z + ((camera.look_vertical * tmp) / 32)
         )
         tmp = point_2.y * math_3d.lookup_table.cos[camera.look_horizontal] + point_2.x * math_3d.lookup_table.sin[ camera.look_horizontal ]
         let vertex_2 = new Int3DVertex(
             point_2.x * math_3d.lookup_table.cos[camera.look_horizontal] - point_2.y * math_3d.lookup_table.sin[ camera.look_horizontal ],
             tmp,
-            parent_sector.bottom_z - camera.z_position + ( ( camera.look_vertical * tmp ) / 32 )
+            parent_sector.bottom_z - camera.position.z + ( ( camera.look_vertical * tmp ) / 32 )
         )
         let vertex_3 = new Int3DVertex( vertex_1.x, vertex_1.y, vertex_1.z + parent_sector.top_z )
         let vertex_4 = new Int3DVertex( vertex_2.x, vertex_2.y, vertex_2.z + parent_sector.top_z )
@@ -70,9 +70,9 @@ export default class Edge {
     collect_points( parent_sector, camera, screen ){
 
         // offset bottom 2 points by camera
-        let bottom_point_1 = new Int2DVertex( this.vertexes[ 1 - this.facing ].x - camera.x_position, this.vertexes[ 1 - this.facing ].y - camera.y_position )
-        let bottom_point_2 = new Int2DVertex( this.vertexes[ 0 + this.facing ].x - camera.x_position, this.vertexes[ 0 + this.facing ].y - camera.y_position )
-        let vertices       = this.vertexes_to_vertices( parent_sector, camera, screen, bottom_point_1, bottom_point_2, false )
+        let bottom_point_1 = new Int2DVertex( this.vertices[ 1 - this.facing ].x - camera.position.x, this.vertices[ 1 - this.facing ].y - camera.position.y )
+        let bottom_point_2 = new Int2DVertex( this.vertices[ 0 + this.facing ].x - camera.position.x, this.vertices[ 0 + this.facing ].y - camera.position.y )
+        let vertices       = this.vertices_to_vertices( parent_sector, camera, screen, bottom_point_1, bottom_point_2, false )
 
         // nothing to collect
         if( vertices.length === 0 ){ return }
@@ -117,9 +117,9 @@ export default class Edge {
     draw_edge( parent_sector, camera, screen ){
 
         // offset bottom 2 points by camera
-        let bottom_point_1 = new Int2DVertex( this.vertexes[ 0 + this.facing ].x - camera.x_position, this.vertexes[ 0 + this.facing ].y - camera.y_position )
-        let bottom_point_2 = new Int2DVertex( this.vertexes[ 1 - this.facing ].x - camera.x_position, this.vertexes[ 1 - this.facing ].y - camera.y_position )
-        let vertices = this.vertexes_to_vertices( parent_sector, camera, screen, bottom_point_1, bottom_point_2 )
+        let bottom_point_1 = new Int2DVertex( this.vertices[ 0 + this.facing ].x - camera.position.x, this.vertices[ 0 + this.facing ].y - camera.position.y )
+        let bottom_point_2 = new Int2DVertex( this.vertices[ 1 - this.facing ].x - camera.position.x, this.vertices[ 1 - this.facing ].y - camera.position.y )
+        let vertices = this.vertices_to_vertices( parent_sector, camera, screen, bottom_point_1, bottom_point_2 )
 
         // nothing to draw
         if( vertices.length === 0 ){ return }
