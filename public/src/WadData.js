@@ -1,10 +1,11 @@
 import Int2DVertex from "./type/Int2DVertex.js"
 import Edge from "./type/Edge.js"
 import Int3DVertex from "./type/Int3DVertex.js"
-import Player from "./Player.js"
+import {BoundBox, PartitionLine, BSPNode, BSPTree} from "./bsp/BSPTree.js"
 
 export default class WadData {
-    constructor( things, linedefs, sidedef, vertices, segs, ssectors, nodes, sectors, reject, blockmap ){
+    constructor( mood, things, linedefs, sidedef, vertices, segs, ssectors, nodes, sectors, reject, blockmap ){
+        this.mood     = mood
         this.cache    = []
         this.things   = things
         this.linedefs = linedefs
@@ -23,9 +24,9 @@ export default class WadData {
         let top_right   = [ ...this.vertices[ 0 ] ]
         let bottom_left = [ ...this.vertices[ 0 ] ]
         this.vertices.forEach( ( vertex ) => {
-            if( vertex[ 0 ] > top_right[ 0 ]   ){ top_right[ 0 ]   = vertex[ 0 ] }
+            if( vertex[ 0 ] < top_right[ 0 ]   ){ top_right[ 0 ]   = vertex[ 0 ] }
             if( vertex[ 1 ] > top_right[ 1 ]   ){ top_right[ 1 ]   = vertex[ 1 ] }
-            if( vertex[ 0 ] < bottom_left[ 0 ] ){ bottom_left[ 0 ] = vertex[ 0 ] }
+            if( vertex[ 0 ] > bottom_left[ 0 ] ){ bottom_left[ 0 ] = vertex[ 0 ] }
             if( vertex[ 1 ] < bottom_left[ 1 ] ){ bottom_left[ 1 ] = vertex[ 1 ] }
         } )
         this.cache.boundary = [
@@ -44,7 +45,7 @@ export default class WadData {
         let things = this.get_things()
         return {
             position         : new Int3DVertex( things[ 0 ].position.x, things[ 0 ].position.y, 20 ),
-            horizontal_angle : things[ 0 ].angle,
+            horizontal_angle : things[ 0 ].angle + 90,
             vertical_angle   : 0
         }
     }
@@ -80,6 +81,32 @@ export default class WadData {
             ) )
         }
         return this.cache.edges
+    }
+    get_bsp_tree(){
+        if( typeof this.cache.nodes !== "undefined" ){ return this.cache.nodes }
+        this.cache.nodes = []
+        for( let i = 0; i < this.nodes.length; i++ ){
+            this.cache.nodes.push(
+                new BSPNode(
+                    ( this.nodes[ i ][ 6 ] >= 0 ) ? this.cache.nodes[ this.nodes[ i ][ 6 ] ] : false,
+                    ( this.nodes[ i ][ 7 ] >= 0 ) ? this.cache.nodes[ this.nodes[ i ][ 7 ] ] : false,
+                    new PartitionLine(
+                        new Int2DVertex( this.nodes[ i ][ 0 ], this.nodes[ i ][ 1 ] ),
+                        new Int2DVertex( this.nodes[ i ][ 2 ], this.nodes[ i ][ 3 ] )
+                    ),
+                    new Int2DVertex( this.nodes[ i ][ 0 ], this.nodes[ i ][ 0 ] ),
+                    new BoundBox(
+                        new Int2DVertex( this.nodes[ i ][ 4 ][ 0 ], this.nodes[ i ][ 4 ][ 1 ] ),
+                        new Int2DVertex( this.nodes[ i ][ 4 ][ 2 ], this.nodes[ i ][ 4 ][ 3 ] )
+                    ),
+                    new BoundBox(
+                        new Int2DVertex( this.nodes[ i ][ 5 ][ 0 ], this.nodes[ i ][ 5 ][ 1 ] ),
+                        new Int2DVertex( this.nodes[ i ][ 5 ][ 2 ], this.nodes[ i ][ 5 ][ 3 ] )
+                    ),
+                )
+            )
+        }
+        return new BSPTree( this.cache.nodes )
     }
     get_segments(){
         if( typeof this.cache.segs !== "undefined" ){ return this.cache.segs }

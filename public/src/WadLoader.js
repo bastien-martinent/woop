@@ -3,7 +3,8 @@ import Edge from "./type/Edge.js"
 import WadData from "./WadData.js";
 
 export default class WadLoader {
-    constructor( file_paths = [] ){
+    constructor( mood, file_paths = [] ){
+        this.mood      = mood
         this.MAP_LUMPS = {
             'THINGS'   : 1,
             'LINEDEFS' : 2,
@@ -167,6 +168,7 @@ export default class WadLoader {
         let map_index = this.get_lump_index_by_name( map_name )
         if( -1 === map_index ){ return null }
         return new WadData(
+            this.mood,
             this.read_things_from_lump( map_index ),
             this.read_lindefs_from_lump( map_index ),
             this.read_sidedef_from_lump( map_index ),

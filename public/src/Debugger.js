@@ -29,6 +29,7 @@ export default class Debugger {
         pre.innerHTML             += "Keys press : <span id='debug_keys'></span><br>"
         pre.innerHTML             += "Mouse position : <span id='debug_mouse'></span><br>"
         pre.innerHTML             += "Cursor position : <span id='debug_cursor'></span><br>"
+        pre.innerHTML             += "Editor position : <span id='debug_editor_pos'></span><br>"
         pre.innerHTML             += "<canvas id='debug_map' width='"+map_display_x+"' height='"+map_display_y+"'></canvas>"
         pre.innerHTML             += "Player position : <br><span id='debug_p_pos'></span><br><span id='debug_p_ang'></span><br>"
 
@@ -62,6 +63,7 @@ export default class Debugger {
         document.getElementById("debug_keys").innerHTML       = '<br>'+JSON.stringify( Array.from( this.mood.inputs.input_status ).join(" ,<br>") )
         document.getElementById("debug_mouse").innerHTML      = "<br>mouse "+( ( this.mood.inputs.mouse_lock ) ? "lock " : "unlock " )+"x-"+this.mood.inputs.mouse_movements.x+" y-"+this.mood.inputs.mouse_movements.y
         document.getElementById("debug_cursor").innerHTML     = "<br>x-"+this.mood.editor.cursor.position.x+" <br>y-"+this.mood.editor.cursor.position.y
+        document.getElementById("debug_editor_pos").innerHTML = "<br>x-"+this.mood.editor.grid_pos.x+" <br>y-"+this.mood.editor.grid_pos.y
         document.getElementById("debug_p_pos").innerHTML      = "<br>x-"+this.mood.player.position.x+" <br>y-"+this.mood.player.position.y+" <br>z-"+this.mood.player.position.z
         document.getElementById("debug_p_ang").innerHTML      = "h_angle-"+this.mood.player.look_horizontal+" v_angle-"+this.mood.player.look_vertical
     }
