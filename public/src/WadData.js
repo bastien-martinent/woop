@@ -1,7 +1,7 @@
 import Int2DVertex from "./type/Int2DVertex.js"
 import Edge from "./type/Edge.js"
 import Int3DVertex from "./type/Int3DVertex.js"
-import {BoundBox, PartitionLine, BSPNode, BSPTree} from "./bsp/BSPTree.js"
+import {BoundBox, PartitionLine, BSPNode, BSPTree, SubSector, Segment} from "./BSPTree.js"
 
 export default class WadData {
     constructor( mood, things, linedefs, sidedef, vertices, segs, ssectors, nodes, sectors, reject, blockmap ){
@@ -84,38 +84,58 @@ export default class WadData {
     }
     get_bsp_tree(){
         if( typeof this.cache.nodes !== "undefined" ){ return this.cache.nodes }
+        let sub_sectors  = this.get_sub_sectors()
         this.cache.nodes = []
         for( let i = 0; i < this.nodes.length; i++ ){
             this.cache.nodes.push(
                 new BSPNode(
-                    ( this.nodes[ i ][ 6 ] >= 0 ) ? this.cache.nodes[ this.nodes[ i ][ 6 ] ] : false,
-                    ( this.nodes[ i ][ 7 ] >= 0 ) ? this.cache.nodes[ this.nodes[ i ][ 7 ] ] : false,
+                    ( this.nodes[ i ][ 6 ] < 0 ) ? sub_sectors[ 0x8000 + this.nodes[ i ][ 6 ] ] : this.cache.nodes[ this.nodes[ i ][ 6 ] ],
+                    ( this.nodes[ i ][ 7 ] < 0 ) ? sub_sectors[ 0x8000 + this.nodes[ i ][ 7 ] ] : this.cache.nodes[ this.nodes[ i ][ 7 ] ],
+                    new BoundBox(
+                        new Int2DVertex( this.nodes[ i ][ 4 ][ 2 ], this.nodes[ i ][ 4 ][ 0 ] ),
+                        new Int2DVertex( this.nodes[ i ][ 4 ][ 3 ], this.nodes[ i ][ 4 ][ 1 ] )
+                    ),
+                    new BoundBox(
+                        new Int2DVertex( this.nodes[ i ][ 5 ][ 2 ], this.nodes[ i ][ 5 ][ 0 ] ),
+                        new Int2DVertex( this.nodes[ i ][ 5 ][ 3 ], this.nodes[ i ][ 5 ][ 1 ] )
+                    ),
                     new PartitionLine(
                         new Int2DVertex( this.nodes[ i ][ 0 ], this.nodes[ i ][ 1 ] ),
-                        new Int2DVertex( this.nodes[ i ][ 2 ], this.nodes[ i ][ 3 ] )
-                    ),
-                    new Int2DVertex( this.nodes[ i ][ 0 ], this.nodes[ i ][ 0 ] ),
-                    new BoundBox(
-                        new Int2DVertex( this.nodes[ i ][ 4 ][ 0 ], this.nodes[ i ][ 4 ][ 1 ] ),
-                        new Int2DVertex( this.nodes[ i ][ 4 ][ 2 ], this.nodes[ i ][ 4 ][ 3 ] )
-                    ),
-                    new BoundBox(
-                        new Int2DVertex( this.nodes[ i ][ 5 ][ 0 ], this.nodes[ i ][ 5 ][ 1 ] ),
-                        new Int2DVertex( this.nodes[ i ][ 5 ][ 2 ], this.nodes[ i ][ 5 ][ 3 ] )
-                    ),
+                        new Int2DVertex( this.nodes[ i ][ 0 ] + this.nodes[ i ][ 2 ], this.nodes[ i ][ 1 ] + this.nodes[ i ][ 3 ] ),
+                        this.nodes[ i ][ 2 ],
+                        this.nodes[ i ][ 3 ]
+                    )
                 )
             )
         }
-        return new BSPTree( this.cache.nodes )
+        return new BSPTree( this.cache.nodes, null,null, this.mood )
+    }
+    get_sub_sectors(){
+        if( typeof this.cache.ssectors !== "undefined" ){ return this.cache.ssectors }
+        let segments        = this.get_segments()
+        this.cache.ssectors = []
+        for( let i = 0; i < this.ssectors.length; i++ ){
+            let slice = []
+            for( let i2 = this.ssectors[ i ][ 1 ]; i2 < this.ssectors[ i ][ 1 ] + this.ssectors[ i ][ 0 ]; i2++ ){
+                slice.push( segments[ i2 ] )
+            }
+            this.cache.ssectors.push( new SubSector( slice ) )
+        }
+        return this.cache.ssectors
     }
     get_segments(){
         if( typeof this.cache.segs !== "undefined" ){ return this.cache.segs }
         let vertices    = this.get_vertices()
+        let edges       = this.get_edges()
         this.cache.segs = []
         for( let i = 0; i < this.segs.length; i++ ){
-            this.cache.segs.push( new Edge(
+            this.cache.segs.push( new Segment(
                 vertices[ this.segs[ i ][ 0 ] ],
-                vertices[ this.segs[ i ][ 1 ] ]
+                vertices[ this.segs[ i ][ 1 ] ],
+                this.segs[ i ][ 2 ],
+                this.segs[ i ][ 4 ],
+                this.segs[ i ][ 5 ],
+                edges[ this.segs[ i ][ 3 ] ]
             ) )
         }
         return this.cache.segs

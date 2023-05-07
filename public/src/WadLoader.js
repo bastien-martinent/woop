@@ -259,7 +259,7 @@ export default class WadLoader {
         for( let i = 0; i < lump.byteLength; i = i+4 ){
             ssectors.push( [
                 this.read_2_bytes( lump, i+0, 'int16' ), //Seg count
-                this.read_2_bytes( lump, i+2, 'int16' )  //First seg number
+                this.read_2_bytes( lump, i+2, 'int16' )  //First seg index
             ] )
         }
         return ssectors
