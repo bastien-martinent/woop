@@ -45,7 +45,7 @@ export default class WadData {
         let things = this.get_things()
         return {
             position         : new Int3DVertex( things[ 0 ].position.x, things[ 0 ].position.y, 20 ),
-            horizontal_angle : things[ 0 ].angle + 90,
+            horizontal_angle : things[ 0 ].angle,
             vertical_angle   : 0
         }
     }
@@ -89,6 +89,7 @@ export default class WadData {
         for( let i = 0; i < this.nodes.length; i++ ){
             this.cache.nodes.push(
                 new BSPNode(
+                    i,
                     ( this.nodes[ i ][ 6 ] < 0 ) ? sub_sectors[ 0x8000 + this.nodes[ i ][ 6 ] ] : this.cache.nodes[ this.nodes[ i ][ 6 ] ],
                     ( this.nodes[ i ][ 7 ] < 0 ) ? sub_sectors[ 0x8000 + this.nodes[ i ][ 7 ] ] : this.cache.nodes[ this.nodes[ i ][ 7 ] ],
                     new BoundBox(
@@ -108,7 +109,7 @@ export default class WadData {
                 )
             )
         }
-        return new BSPTree( this.cache.nodes, null,null, this.mood )
+        return new BSPTree( this.mood, this.cache.nodes)
     }
     get_sub_sectors(){
         if( typeof this.cache.ssectors !== "undefined" ){ return this.cache.ssectors }
@@ -119,7 +120,7 @@ export default class WadData {
             for( let i2 = this.ssectors[ i ][ 1 ]; i2 < this.ssectors[ i ][ 1 ] + this.ssectors[ i ][ 0 ]; i2++ ){
                 slice.push( segments[ i2 ] )
             }
-            this.cache.ssectors.push( new SubSector( slice ) )
+            this.cache.ssectors.push( new SubSector( i, slice ) )
         }
         return this.cache.ssectors
     }

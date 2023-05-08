@@ -3,43 +3,66 @@ export default class Debugger {
         this.mood        = mood
         this.enable      = enable
         this.is_init     = false
-        this.box         = null
+        this.head        = null
+        this.body        = null
         this.map_context = null
-
     }
 
     init(){
-        let pre           = document.createElement("pre" )
-        let ratio         = Math.min(200 / this.mood.level.size.x, 200 / this.mood.level.size.y );
+        let head          = document.createElement("pre" )
+        let body          = document.createElement("pre" )
+        let ratio         = Math.min(200 / this.mood.level.size.x, 200 / this.mood.level.size.y )
         let map_display_x = Math.round( this.mood.level.size.x * ratio )
         let map_display_y = Math.round( this.mood.level.size.y * ratio )
 
-        pre.style.position        = "absolute"
-        pre.style.display         = "block"
-        pre.style.top             = "50px"
-        pre.style.right           = "50px"
-        pre.style.backgroundColor = "#ffffffaa"
-        pre.style.margin          = "0px"
-        pre.style.padding         = "10px"
-        pre.innerHTML             += "Fps : <span id='debug_frame_rate'></span><br>"
-        pre.innerHTML             += "Game state : <span id='debug_game_state'></span><br>"
-        pre.innerHTML             += "viewport resolution : <span id='debug_vp_res'></span><br>"
-        pre.innerHTML             += "Internal resolution : <span id='debug_int_res'></span><br>"
-        pre.innerHTML             += "Pixel scale : <span id='debug_p_scale'></span><br>"
-        pre.innerHTML             += "Keys press : <span id='debug_keys'></span><br>"
-        pre.innerHTML             += "Mouse position : <span id='debug_mouse'></span><br>"
-        pre.innerHTML             += "Cursor position : <span id='debug_cursor'></span><br>"
-        pre.innerHTML             += "Editor position : <span id='debug_editor_pos'></span><br>"
-        pre.innerHTML             += "<canvas id='debug_map' width='"+map_display_x+"' height='"+map_display_y+"'></canvas>"
-        pre.innerHTML             += "Player position : <br><span id='debug_p_pos'></span><br><span id='debug_p_ang'></span><br>"
+        head.id                    = "debug_head"
+        head.style.position        = "absolute"
+        head.style.display         = "block"
+        head.style.top             = "50px"
+        head.style.right           = "50px"
+        head.style.width           = "216px"
+        head.style.height          = "16px"
+        head.style.backgroundColor = "#850000"
+        head.style.color           = "#ffffff"
+        head.style.margin          = "0px"
+        head.style.padding         = "2px"
+        head.innerHTML             += "Debugger"
 
-        document.body.append( pre )
+        body.id                    = "debug_body"
+        body.style.position        = "absolute"
+        body.style.display         = "none"
+        body.style.top             = "70px"
+        body.style.right           = "50px"
+        body.style.width           = "200px"
+        body.style.backgroundColor = "#ffffffaa"
+        body.style.margin          = "0px"
+        body.style.padding         = "10px"
+        body.innerHTML             += "Fps : <span id='debug_frame_rate'></span><br>"
+        body.innerHTML             += "Game state : <span id='debug_game_state'></span><br>"
+        body.innerHTML             += "viewport resolution : <span id='debug_vp_res'></span><br>"
+        body.innerHTML             += "Internal resolution : <span id='debug_int_res'></span><br>"
+        body.innerHTML             += "Pixel scale : <span id='debug_p_scale'></span><br>"
+        body.innerHTML             += "Keys press : <span id='debug_keys'></span><br>"
+        body.innerHTML             += "Mouse position : <span id='debug_mouse'></span><br>"
+        body.innerHTML             += "Cursor position : <span id='debug_cursor'></span><br>"
+        body.innerHTML             += "Editor position : <span id='debug_editor_pos'></span><br>"
+        body.innerHTML             += "<canvas id='debug_map' width='"+map_display_x+"' height='"+map_display_y+"'></canvas>"
+        body.innerHTML             += "Player position : <br><span id='debug_p_pos'></span><br><span id='debug_p_ang'></span><br>"
 
-        this.box                     = pre
+        document.body.append( head )
+        document.body.append( body )
+
+        this.head                    = head
+        this.body                    = body
         this.map_context             = document.getElementById( "debug_map" ).getContext( "2d" )
         this.map_context.fillStyle   = "rgba( 0, 0, 0 , 1 )"
         this.map_context.strokeStyle = "rgba( 0, 0, 0 , 1 )"
         this.map_context.strokeRect( 0, 0, map_display_x, map_display_y )
+
+        this.head.addEventListener( 'click', () => {
+            this.body.display = ( this.body.display === "block" ) ? "none" : "block"
+            this.body.style.setProperty('display', this.body.display )
+        } )
 
         this.is_init = true
     }
@@ -47,8 +70,8 @@ export default class Debugger {
     switch(){
         this.enable = ! this.enable
         if( ! this.enable ){
-            this.box.remove()
-            this.box     = null
+            this.body.remove()
+            this.body    = null
             this.is_init = false
         }
     }

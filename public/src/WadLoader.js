@@ -1,22 +1,9 @@
-import Int2DVertex from "./type/Int2DVertex.js"
-import Edge from "./type/Edge.js"
-import WadData from "./WadData.js";
+import { DOOM } from "./const.js"
+import WadData from "./WadData.js"
 
 export default class WadLoader {
     constructor( mood, file_paths = [] ){
-        this.mood      = mood
-        this.MAP_LUMPS = {
-            'THINGS'   : 1,
-            'LINEDEFS' : 2,
-            'SIDEDEFS' : 3,
-            'VERTEXES' : 4,
-            'SEGS'     : 5,
-            'SSECTORS' : 6,
-            'NODES'    : 7,
-            'SECTORS'  : 8,
-            'REJECT'   : 9,
-            'BLOCKMAP' : 10,
-        }
+        this.mood            = mood
         this.cache           = []
         this.wads            = []
         this.lumps_count     = 0
@@ -59,10 +46,10 @@ export default class WadLoader {
     read_bytes(  buffer, offset, bytes_length, output_type ){
         switch ( output_type ){
             case "int8"    :
-                return this.get_int16( buffer, offset );
+                return this.get_int8( buffer, offset )
                 break;
             case "int16"    :
-                return this.get_int16( buffer, offset  );
+                return this.get_int16( buffer, offset  )
                 break;
             case "int16[4]" :
                 return [
@@ -73,10 +60,10 @@ export default class WadLoader {
                 ]
                 break;
             case "int32"    :
-                return this.get_int32( buffer, offset, 4 );
+                return this.get_int32( buffer, offset, 4 )
                 break;
             default         : //string
-                return new Uint8Array( buffer, offset, bytes_length );
+                return new Uint8Array( buffer, offset, bytes_length )
         }
     }
     read_1_byte(  buffer, offset, output_type = 'int8' ){
@@ -183,7 +170,7 @@ export default class WadLoader {
     }
 
     read_things_from_lump( map_index ){
-        let lump   = this.cache_lump( map_index + this.MAP_LUMPS.THINGS )
+        let lump   = this.cache_lump( map_index + DOOM.MAP_LUMPS.THINGS )
         let things = []
         for( let i = 0; i < lump.byteLength; i = i + 10 ){
             things.push( [
@@ -197,7 +184,7 @@ export default class WadLoader {
         return things
     }
     read_lindefs_from_lump( map_index ){
-        let lump    = this.cache_lump( map_index + this.MAP_LUMPS.LINEDEFS )
+        let lump    = this.cache_lump( map_index + DOOM.MAP_LUMPS.LINEDEFS )
         let lindefs = []
         for( let i = 0; i < lump.byteLength; i = i + 14 ){
             lindefs.push( [
@@ -213,7 +200,7 @@ export default class WadLoader {
         return lindefs
     }
     read_sidedef_from_lump( map_index ){
-        let lump  = this.cache_lump( map_index + this.MAP_LUMPS.SIDEDEFS )
+        let lump  = this.cache_lump( map_index + DOOM.MAP_LUMPS.SIDEDEFS )
         let sidedefs = []
         for( let i = 0; i < lump.byteLength; i = i + 30 ){
             sidedefs.push( [
@@ -228,7 +215,7 @@ export default class WadLoader {
         return sidedefs
     }
     read_vertices_from_lump( map_index ){
-        let lump     = this.cache_lump( map_index + this.MAP_LUMPS.VERTEXES )
+        let lump     = this.cache_lump( map_index + DOOM.MAP_LUMPS.VERTEXES )
         let vertices = []
         for( let i = 0; i < lump.byteLength; i = i+4 ){
             vertices.push( [
@@ -239,7 +226,7 @@ export default class WadLoader {
         return vertices
     }
     read_segs_from_lump( map_index ){
-        let lump = this.cache_lump( map_index + this.MAP_LUMPS.SEGS )
+        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.SEGS )
         let segs = []
         for( let i = 0; i < lump.byteLength; i = i+12 ){
             segs.push( [
@@ -254,7 +241,7 @@ export default class WadLoader {
         return segs
     }
     read_ssectors_from_lump( map_index ){
-        let lump = this.cache_lump( map_index + this.MAP_LUMPS.SSECTORS )
+        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.SSECTORS )
         let ssectors = []
         for( let i = 0; i < lump.byteLength; i = i+4 ){
             ssectors.push( [
@@ -265,7 +252,7 @@ export default class WadLoader {
         return ssectors
     }
     read_nodes_from_lump( map_index ){
-        let lump   = this.cache_lump( map_index + this.MAP_LUMPS.NODES )
+        let lump   = this.cache_lump( map_index + DOOM.MAP_LUMPS.NODES )
         let nodes  = []
         for( let i = 0; i < lump.byteLength; i = i + 28 ){
             nodes.push( [
@@ -282,7 +269,7 @@ export default class WadLoader {
         return nodes
     }
     read_sectors_from_lump( map_index ){
-        let lump = this.cache_lump( map_index + this.MAP_LUMPS.SECTORS )
+        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.SECTORS )
         let sectors = []
         for( let i = 0; i < lump.byteLength; i = i+26 ){
             sectors.push( [
@@ -298,11 +285,11 @@ export default class WadLoader {
         return sectors
     }
     read_reject_from_lump( map_index ){
-        let lump = this.cache_lump( map_index + this.MAP_LUMPS.REJECT )
+        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.REJECT )
         return lump
     }
     read_blockmap_from_lump( map_index ){
-        let lump = this.cache_lump( map_index + this.MAP_LUMPS.BLOCKMAP )
+        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.BLOCKMAP )
         return lump
     }
 

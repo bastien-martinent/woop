@@ -1,11 +1,16 @@
+import Int2DVertex from "./type/Int2DVertex.js"
+
 export default class MathUtility {
     constructor() {
         this.lookup_table = { cos: [], sin: [], }
-        for( let x = 0; x < 360; x++ ){
-            this.lookup_table.cos[ x ] = Math.cos( x * Math.PI / 180 )
-            this.lookup_table.sin[ x ] = Math.sin( x * Math.PI / 180 )
+        this.pi           = Math.PI
+        this.pi2          = 2 * this.pi
+        this.piRad        = this.pi / 180
+
+        for( let i = 0; i < 360; i++ ){
+            this.lookup_table.cos[ i ] = Math.cos( i * this.piRad )
+            this.lookup_table.sin[ i ] = Math.sin( i * this.piRad )
         }
-        this.pi2 = 2 * Math.PI
     }
     get_distance( point_1, point_2 ){
         return Math.round( Math.sqrt( Math.pow( point_2.x-point_1.x, 2 ) + Math.pow( ( point_2.y-point_1.y ), 2 ) ) )
@@ -21,15 +26,15 @@ export default class MathUtility {
         if( vector1.y === 0 ){ vector1.y = 1 }
         vector1.z = vector1.z + s * ( vector1.y - vector1.z )
     }
-    angle_range( angle, min_angle = 0 , max_angle = 360, loop = true ){
+    angle_range( angle, min_angle = 0 , max_angle = 360, loop = true, round = true ){
         if( loop ){
-            if( angle > max_angle ){ angle -= max_angle }
-            if( angle < min_angle ){ angle += max_angle }
+            angle = angle % max_angle
+            angle = ( angle < min_angle ) ? angle + max_angle : angle
         }else{
             if( angle > max_angle ){ angle = max_angle }
             if( angle < min_angle ){ angle = min_angle }
         }
-        return angle
+        return ( round ) ? Math.round( angle ) : angle
     }
     value_range( value, min, max, loop = false ){
         if( loop ){
@@ -37,5 +42,15 @@ export default class MathUtility {
             if( value > min ){ return max - ( value % max ) }
         }
         return Math.min( Math.max( value, min ), max )
+    }
+    range_random_int( min = 0, max = 255 ){
+        min = Math.ceil( min )
+        max = Math.floor( max )
+        return Math.floor( Math.random() * (max - min + 1) + min )
+    }
+    point_to_angle( point1, point2 ){
+        let deltaY = point2.y - point1.y
+        let deltaX = point2.x - point1.x
+        return this.angle_range( Math.atan2( deltaY, deltaX ) * ( 180 / this.pi ), 0, 360, true, false )
     }
 }
