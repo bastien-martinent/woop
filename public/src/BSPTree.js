@@ -1,4 +1,5 @@
 import Int2DVertex from "./type/Int2DVertex.js"
+import MoodMath from "./MoodMath.js"
 
 export class BSPTree{
     constructor( mood, nodes ) {
@@ -6,21 +7,21 @@ export class BSPTree{
         this.root  = nodes[ nodes.length-1 ]
         this.nodes = nodes
     }
-    render_node( player, draw_callback, node = this.root ){
+    render_nodes( player, draw_callback, node = this.root ){
         if( node instanceof SubSector ){
             //leaf are SubSector object
             draw_callback( node )
             return
         }
         if( this.is_right( player, node ) ){
-            this.render_node( player, draw_callback, node.right )
+            this.render_nodes( player, draw_callback, node.right )
             if( this.check_bound_box( player, node.left_bound_box ) ){
-                this.render_node( player, draw_callback, node.left )
+                this.render_nodes( player, draw_callback, node.left )
             }
         }else{
-            this.render_node( player, draw_callback, node.left )
+            this.render_nodes( player, draw_callback, node.left )
             if( this.check_bound_box( player, node.right_bound_box ) ){
-                this.render_node( player, draw_callback, node.right )
+                this.render_nodes( player, draw_callback, node.right )
             }
         }
     }
@@ -67,12 +68,11 @@ export class BSPTree{
             }
         }
         for( let i = 0; i < box_sides.length; i++ ){
-            let angle_start  = this.mood.mood_math.angle_range( this.mood.mood_math.point_to_angle( player.position, box_sides[ i ][ 0 ] ),0, 360, true, false )
-            let angle_end    = this.mood.mood_math.angle_range( this.mood.mood_math.point_to_angle( player.position, box_sides[ i ][ 1 ] ), 0, 360, true, false )
-            let angle_span   = this.mood.mood_math.angle_range( angle_start - angle_end, 0, 360, true, false )
-            let angle_1      = angle_start - player.look_horizontal //wtf is this angle_1 ???
-            let angle_span_1 = this.mood.mood_math.angle_range( angle_1 + ( this.mood.renderer.horisontal_fov / 2 ), 0, 360, true, false )
-            if( angle_span_1 > 0 && angle_span_1 < this.mood.renderer.horisontal_fov + angle_span ){ return true }
+            let angle_start  = MoodMath.angle_range( MoodMath.point_to_angle( player.position, box_sides[ i ][ 0 ] ),0, 360, true, false )
+            let angle_end    = MoodMath.angle_range( MoodMath.point_to_angle( player.position, box_sides[ i ][ 1 ] ), 0, 360, true, false )
+            let angle_span   = MoodMath.angle_range( angle_start - angle_end, 0, 360, true, false )
+            let angle_span_1 = MoodMath.angle_range( angle_start - player.horizontal_angle + this.mood.renderer.demi_horisontal_fov , 0, 360, true, false )
+            if( angle_span_1 < this.mood.renderer.horisontal_fov + angle_span ){ return true }
         }
         return false
     }

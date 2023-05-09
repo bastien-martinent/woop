@@ -1,32 +1,31 @@
-import Int2DVertex from "./type/Int2DVertex.js"
-
 export default class MoodMath {
-    constructor() {
-        this.lookup_table = { cos: [], sin: [], }
-        this.pi           = Math.PI
-        this.pi2          = 2 * this.pi
-        this.piRad        = this.pi / 180
 
+    static is_init       = false
+    static lookup_tables = { cos: [], sin: [], }
+    static pi            = Math.PI
+    static pi2           = 2 * this.pi
+    static piRad         = this.pi / 180
+    static piDeg         = 180 / this.pi
+
+    static init = () => {
+        if( this.is_init ){ return false }
         for( let i = 0; i < 360; i++ ){
-            this.lookup_table.cos[ i ] = Math.cos( i * this.piRad )
-            this.lookup_table.sin[ i ] = Math.sin( i * this.piRad )
+            this.lookup_tables.cos[ i ] = Math.cos( i * this.piRad )
+            this.lookup_tables.sin[ i ] = Math.sin( i * this.piRad )
         }
+        this.is_init = true
     }
-    get_distance( point_1, point_2 ){
-        return Math.round( Math.sqrt( Math.pow( point_2.x-point_1.x, 2 ) + Math.pow( ( point_2.y-point_1.y ), 2 ) ) )
+
+    static lookup_cos = ( value ) => {
+        this.init()
+        return this.lookup_tables.cos[ this.angle_range( value ) ]
     }
-    clip_behind_player( vector1, vector2 ){
-        let distance_a = vector1.y
-        let distance_b = vector2.y
-        let distance  = distance_a - distance_b
-        if( distance === 0 ){ distance = 1 }
-        let s = distance_a / ( distance_a - distance_b )
-        vector1.x = vector1.x + s * ( vector2.x - vector1.x )
-        vector1.y = vector1.y + s * ( vector2.y - vector1.y )
-        if( vector1.y === 0 ){ vector1.y = 1 }
-        vector1.z = vector1.z + s * ( vector1.y - vector1.z )
+    static lookup_sin = ( value ) => {
+        this.init()
+        return this.lookup_tables.sin[ this.angle_range( value ) ]
     }
-    angle_range( angle, min_angle = 0 , max_angle = 360, loop = true, round = true ){
+
+    static angle_range = ( angle, min_angle = 0 , max_angle = 360, loop = true, round = true ) => {
         if( loop ){
             angle = angle % max_angle
             angle = ( angle < min_angle ) ? angle + max_angle : angle
@@ -36,24 +35,38 @@ export default class MoodMath {
         }
         return ( round ) ? Math.round( angle ) : angle
     }
-    value_range( value, min, max, loop = false ){
+    static value_range = ( value, min, max, loop = false ) => {
         if( loop ){
             if( value > max ){ return min + ( value % max ) }
             if( value > min ){ return max - ( value % max ) }
         }
         return Math.min( Math.max( value, min ), max )
     }
-    range_random_int( min = 0, max = 255 ){
+    static random_int_range = ( min = 0, max = 255 ) => {
         min = Math.ceil( min )
         max = Math.floor( max )
-        return Math.floor( Math.random() * (max - min + 1) + min )
+        return Math.floor( Math.random() * ( max - min + 1 ) + min )
     }
-    point_to_angle( point1, point2 ){
+    static point_to_angle = ( point1, point2 ) => {
         let deltaY = point2.y - point1.y
         let deltaX = point2.x - point1.x
-        return this.angle_range( Math.atan2( deltaY, deltaX ) * ( 180 / this.pi ), 0, 360, true, false )
+        return this.angle_range( this.radians_to_degrees( Math.atan2( deltaY, deltaX ) ), 0, 360, true, false )
     }
-    binary_angle_to_degree( binary_angle ){
-        return this.angle_range( ( 360 / 65535 ) * binary_angle , 0, 360, true, false )
+    static radians_to_degrees = ( radians ) => {
+        return radians * this.piDeg
     }
+    static degrees_to_radians = ( degrees ) => {
+        return degrees * this.piRad
+    }
+    static binary_angle_to_degree = ( binary_angle ) => {
+        //full circle is -32768 to 32767.
+        return this.angle_range( ( 360 / 65535 ) * ( binary_angle + 32768 ), 0, 360, true, false )
+    }
+    static angle_to_screen_x = ( renderer, angle ) => {
+        if( angle >= 0 ){
+            return Math.round( renderer.sreen_distance - Math.tan( this.degrees_to_radians( angle ) ) * renderer.demi_internal_width )
+        }
+        return Math.round( (  Math.tan( this.degrees_to_radians( angle ) ) * - 1 ) * renderer.demi_internal_width + renderer.sreen_distance )
+    }
+
 }

@@ -18,15 +18,15 @@ export default class Edge {
     points_to_vertices( parent_sector, camera, screen, point_1, point_2, update_distance = true  ) {
         // worlds position
         let tmp
-        tmp = point_1.y * math_3d.lookup_table.cos[ camera.look_horizontal ] + point_1.x * math_3d.lookup_table.sin[ camera.look_horizontal ]
+        tmp = point_1.y * math_3d.lookup_table.cos[ camera.horizontal_angle ] + point_1.x * math_3d.lookup_table.sin[ camera.horizontal_angle ]
         let vertex_1 = new Int3DVertex(
-            point_1.x * math_3d.lookup_table.cos[ camera.look_horizontal ] - point_1.y * math_3d.lookup_table.sin[ camera.look_horizontal ],
+            point_1.x * math_3d.lookup_table.cos[ camera.horizontal_angle ] - point_1.y * math_3d.lookup_table.sin[ camera.horizontal_angle ],
             tmp,
             parent_sector.bottom_z - camera.position.z + ((camera.look_vertical * tmp) / 32)
         )
-        tmp = point_2.y * math_3d.lookup_table.cos[camera.look_horizontal] + point_2.x * math_3d.lookup_table.sin[ camera.look_horizontal ]
+        tmp = point_2.y * math_3d.lookup_table.cos[camera.horizontal_angle] + point_2.x * math_3d.lookup_table.sin[ camera.horizontal_angle ]
         let vertex_2 = new Int3DVertex(
-            point_2.x * math_3d.lookup_table.cos[camera.look_horizontal] - point_2.y * math_3d.lookup_table.sin[ camera.look_horizontal ],
+            point_2.x * math_3d.lookup_table.cos[camera.horizontal_angle] - point_2.y * math_3d.lookup_table.sin[ camera.horizontal_angle ],
             tmp,
             parent_sector.bottom_z - camera.position.z + ( ( camera.look_vertical * tmp ) / 32 )
         )
@@ -55,14 +55,14 @@ export default class Edge {
         }
 
         // screen x, screen y position
-        vertex_1.set_x( ( vertex_1.x * 200) / vertex_1.y + screen.internal_width_2 )
-        vertex_1.set_y( ( vertex_1.z * 200) / vertex_1.y + screen.internal_height_2 )
-        vertex_2.set_x( ( vertex_2.x * 200) / vertex_2.y + screen.internal_width_2 )
-        vertex_2.set_y( ( vertex_2.z * 200) / vertex_2.y + screen.internal_height_2 )
-        vertex_3.set_x( ( vertex_3.x * 200) / vertex_3.y + screen.internal_width_2 )
-        vertex_3.set_y( ( vertex_3.z * 200) / vertex_3.y + screen.internal_height_2 )
-        vertex_4.set_x( ( vertex_4.x * 200) / vertex_4.y + screen.internal_width_2 )
-        vertex_4.set_y( ( vertex_4.z * 200) / vertex_4.y + screen.internal_height_2 )
+        vertex_1.set_x( ( vertex_1.x * 200) / vertex_1.y + screen.demi_internal_width )
+        vertex_1.set_y( ( vertex_1.z * 200) / vertex_1.y + screen.demi_internal_height )
+        vertex_2.set_x( ( vertex_2.x * 200) / vertex_2.y + screen.demi_internal_width )
+        vertex_2.set_y( ( vertex_2.z * 200) / vertex_2.y + screen.demi_internal_height )
+        vertex_3.set_x( ( vertex_3.x * 200) / vertex_3.y + screen.demi_internal_width )
+        vertex_3.set_y( ( vertex_3.z * 200) / vertex_3.y + screen.demi_internal_height )
+        vertex_4.set_x( ( vertex_4.x * 200) / vertex_4.y + screen.demi_internal_width )
+        vertex_4.set_y( ( vertex_4.z * 200) / vertex_4.y + screen.demi_internal_height )
 
         return [ vertex_1, vertex_2, vertex_3, vertex_4 ]
     }

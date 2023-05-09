@@ -1,11 +1,10 @@
 import { GAME_STATES } from "./const.js"
 import WadLoader from "./WadLoader.js"
-import MoodMath from "./MoodMath.js"
 import Level from "./Level.js"
 import Game from "./Game.js"
 import Editor from "./Editor.js"
 import Debugger from "./Debugger.js"
-import Renderer from "./Renderer.js"
+import Renderer2D from "./Renderer2D.js"
 import InputManager from "./InputManager.js"
 
 class Mood{
@@ -15,9 +14,13 @@ class Mood{
         let field_of_view = ( options.field_of_view !== undefined ) ? options.field_of_view : 90
         let debug         = ( options.debug !== undefined ) ? options.debug : false
 
+        switch ( render_mode ){
+            case '2D' :
+            default :
+                this.renderer     = new Renderer2D( this, canvas, field_of_view, pixel_scale )
+        }
+
         this.game_state   = GAME_STATES.EDITOR
-        this.mood_math = new MoodMath()
-        this.renderer     = new Renderer( this, canvas, render_mode, field_of_view, pixel_scale )
         this.debbuger     = new Debugger( this, debug )
         this.wad_loader   = new WadLoader( this,[ './wads/DOOM1.WAD' ] )
 

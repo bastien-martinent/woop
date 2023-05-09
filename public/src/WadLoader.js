@@ -22,9 +22,11 @@ export default class WadLoader {
     get_int32( buffer, position ){
         return new Int32Array( buffer, position, 1 )[0]
     }
+
+    //you have not write this, you bastard, please give credit
     ascii_decoder( buffer, offset = 0 ){
         let return_string = ""
-        let end = buffer.byteLength
+        let end           = buffer.byteLength
         if( end - offset < 1 ){ return return_string }
         for ( let i = offset; i < end; i++ ){
             let t = buffer[ i ]
@@ -75,7 +77,7 @@ export default class WadLoader {
     read_4_bytes( buffer, offset, output_type = 'int32' ){
         return this.read_bytes( buffer, offset, 4, output_type )
     }
-    read_8_bytes( buffer, offset, output_type = 'int32[4]' ){
+    read_8_bytes( buffer, offset, output_type = 'int16[4]' ){
         return this.read_bytes( buffer, offset, 8, output_type )
     }
     read_string( buffer, offset, bytes_length ){
