@@ -1,6 +1,6 @@
 import { GAME_STATES } from "./const.js"
 import WadLoader from "./WadLoader.js"
-import MathUtility from "./MathUtility.js"
+import MoodMath from "./MoodMath.js"
 import Level from "./Level.js"
 import Game from "./Game.js"
 import Editor from "./Editor.js"
@@ -16,7 +16,7 @@ class Mood{
         let debug         = ( options.debug !== undefined ) ? options.debug : false
 
         this.game_state   = GAME_STATES.EDITOR
-        this.math_utility = new MathUtility()
+        this.mood_math = new MoodMath()
         this.renderer     = new Renderer( this, canvas, render_mode, field_of_view, pixel_scale )
         this.debbuger     = new Debugger( this, debug )
         this.wad_loader   = new WadLoader( this,[ './wads/DOOM1.WAD' ] )

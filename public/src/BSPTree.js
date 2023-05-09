@@ -8,21 +8,18 @@ export class BSPTree{
     }
     render_node( player, draw_callback, node = this.root ){
         if( node instanceof SubSector ){
+            //leaf are SubSector object
             draw_callback( node )
             return
         }
         if( this.is_right( player, node ) ){
-            this.mood.renderer.draw_editor_bound_box( node.right_bound_box )
             this.render_node( player, draw_callback, node.right )
             if( this.check_bound_box( player, node.left_bound_box ) ){
-                this.mood.renderer.draw_editor_bound_box( node.left_bound_box )
                 this.render_node( player, draw_callback, node.left )
             }
         }else{
-            this.mood.renderer.draw_editor_bound_box( node.left_bound_box )
             this.render_node( player, draw_callback, node.left )
             if( this.check_bound_box( player, node.right_bound_box ) ){
-                this.mood.renderer.draw_editor_bound_box( node.right_bound_box )
                 this.render_node( player, draw_callback, node.right )
             }
         }
@@ -46,7 +43,7 @@ export class BSPTree{
 
         if( player.position.x < left ){
             if( player.position.y > top ){
-                box_sides = [ [ box_vertex_b, box_vertex_a ], [ box_vertex_b, box_vertex_c ] ]
+                box_sides = [ [ box_vertex_b, box_vertex_a ], [ box_vertex_c, box_vertex_b ] ]
             }else if( player.position.y < bottom ){
                 box_sides = [ [ box_vertex_b, box_vertex_a ], [ box_vertex_a, box_vertex_d ] ]
             }else{
@@ -54,7 +51,7 @@ export class BSPTree{
             }
         }else if( player.position.x > right ){
             if( player.position.y > top ){
-                box_sides = [ [ box_vertex_b, box_vertex_c ], [ box_vertex_d, box_vertex_c ] ]
+                box_sides = [ [ box_vertex_c, box_vertex_b ], [ box_vertex_d, box_vertex_c ] ]
             }else if( player.position.y < bottom ){
                 box_sides = [ [ box_vertex_a, box_vertex_d ], [ box_vertex_d, box_vertex_c ] ]
             }else{
@@ -62,25 +59,20 @@ export class BSPTree{
             }
         }else{
             if( player.position.y > top ){
-                box_sides = [ [ box_vertex_b, box_vertex_c ] ]
+                box_sides = [ [ box_vertex_c, box_vertex_b ] ]
             }else if(player.position.y < bottom  ){
                 box_sides = [ [ box_vertex_a, box_vertex_d ] ]
             }else{
                 return true
             }
         }
-
         for( let i = 0; i < box_sides.length; i++ ){
-            let angle_start             = this.mood.math_utility.angle_range( this.mood.math_utility.point_to_angle( player.position, box_sides[ i ][ 0 ] ),0, 360, true, false )
-            let angle_end               = this.mood.math_utility.angle_range( this.mood.math_utility.point_to_angle( player.position, box_sides[ i ][ 1 ] ), 0, 360, true, false )
-            let player_horizontal_start = this.mood.math_utility.angle_range( player.look_horizontal + this.mood.renderer.horisontal_fov / 2, 0, 360, true, false )
-            let player_horizontal_end   = this.mood.math_utility.angle_range( player.look_horizontal - this.mood.renderer.horisontal_fov / 2, 0, 360, true, false )
-            if(
-                ( player_horizontal_start > angle_start && player_horizontal_end < angle_start )
-                || ( player_horizontal_start > angle_end && player_horizontal_end < angle_end )
-            ){
-                return true
-            }
+            let angle_start  = this.mood.mood_math.angle_range( this.mood.mood_math.point_to_angle( player.position, box_sides[ i ][ 0 ] ),0, 360, true, false )
+            let angle_end    = this.mood.mood_math.angle_range( this.mood.mood_math.point_to_angle( player.position, box_sides[ i ][ 1 ] ), 0, 360, true, false )
+            let angle_span   = this.mood.mood_math.angle_range( angle_start - angle_end, 0, 360, true, false )
+            let angle_1      = angle_start - player.look_horizontal //wtf is this angle_1 ???
+            let angle_span_1 = this.mood.mood_math.angle_range( angle_1 + ( this.mood.renderer.horisontal_fov / 2 ), 0, 360, true, false )
+            if( angle_span_1 > 0 && angle_span_1 < this.mood.renderer.horisontal_fov + angle_span ){ return true }
         }
         return false
     }

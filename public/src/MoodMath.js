@@ -1,6 +1,6 @@
 import Int2DVertex from "./type/Int2DVertex.js"
 
-export default class MathUtility {
+export default class MoodMath {
     constructor() {
         this.lookup_table = { cos: [], sin: [], }
         this.pi           = Math.PI
@@ -52,5 +52,8 @@ export default class MathUtility {
         let deltaY = point2.y - point1.y
         let deltaX = point2.x - point1.x
         return this.angle_range( Math.atan2( deltaY, deltaX ) * ( 180 / this.pi ), 0, 360, true, false )
+    }
+    binary_angle_to_degree( binary_angle ){
+        return this.angle_range( ( 360 / 65535 ) * binary_angle , 0, 360, true, false )
     }
 }

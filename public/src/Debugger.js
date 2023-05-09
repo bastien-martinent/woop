@@ -99,9 +99,9 @@ export default class Debugger {
         let map_display_y = Math.round( this.mood.level.size.y * ratio )
         let x1            = Math.round( this.mood.player.position.x / this.mood.level.size.x * map_display_x )
         let y1            = Math.round( ( this.mood.level.size.y - this.mood.player.position.y ) / this.mood.level.size.y * map_display_y )
-        let map_look      = this.mood.math_utility.angle_range( this.mood.player.look_horizontal - 90 )
-        let x2            = Math.round( x1 + 10 * this.mood.math_utility.lookup_table.cos[ map_look ]  )
-        let y2            = Math.round( y1 + 10 * this.mood.math_utility.lookup_table.sin[ map_look ] )
+        let map_look      = this.mood.mood_math.angle_range( this.mood.player.look_horizontal - 90 )
+        let x2            = Math.round( x1 + 10 * this.mood.mood_math.lookup_table.cos[ map_look ]  )
+        let y2            = Math.round( y1 + 10 * this.mood.mood_math.lookup_table.sin[ map_look ] )
         // clear map
         this.map_context.fillStyle = "rgba( 0, 0, 0 , 0)"
         this.map_context.strokeStyle = "rgba( 0, 0, 0 , 1)"

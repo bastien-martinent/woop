@@ -30,6 +30,7 @@ export default class Level{
         this.boundary     = map_data.get_boundary()
         this.bsp_tree     = map_data.get_bsp_tree()
         this.player_start = map_data.get_player_start()
+        console.log( this )
     }
     spawn_player(){
         return new Player(

@@ -22,9 +22,9 @@ export default class Editor{
         return this.unit_pixel_size * this.unit_by_ceil * this.grid_zoom
     }
     update(){
-        this.cursor.position.set_x( this.mood.math_utility.value_range( this.cursor.position.x + this.mood.inputs.mouse_movements.x, 0, this.mood.renderer.canvas.width ) )
-        this.cursor.position.set_y( this.mood.math_utility.value_range( this.cursor.position.y + this.mood.inputs.mouse_movements.y, 0, this.mood.renderer.canvas.height ) )
-        this.grid_zoom = this.mood.math_utility.value_range( this.grid_zoom - ( this.mood.inputs.mouse_movements.wheel / 100 ), 5, 40 )
+        this.cursor.position.set_x( this.mood.mood_math.value_range( this.cursor.position.x + this.mood.inputs.mouse_movements.x, 0, this.mood.renderer.canvas.width ) )
+        this.cursor.position.set_y( this.mood.mood_math.value_range( this.cursor.position.y + this.mood.inputs.mouse_movements.y, 0, this.mood.renderer.canvas.height ) )
+        this.grid_zoom = this.mood.mood_math.value_range( this.grid_zoom - ( this.mood.inputs.mouse_movements.wheel / 100 ), 5, 40 )
 
         if( this.mood.inputs.input_status.has( "editor_grab_down" ) ){
             this.cursor.state = CURSORS.GRAB
@@ -37,9 +37,9 @@ export default class Editor{
         if( this.mood.debbuger.enable ){
             if( this.mood.inputs.input_status.has( "look_left_down" ) ){ this.mood.player.look_horizontal  += 2 }
             if( this.mood.inputs.input_status.has( "look_right_down" ) ){ this.mood.player.look_horizontal -= 2 }
-            this.mood.player.look_horizontal = this.mood.math_utility.angle_range( this.mood.player.look_horizontal )
-            let delta_y = Math.round( this.mood.math_utility.lookup_table.sin[ this.mood.player.look_horizontal ] * 6.0 )
-            let delta_x = Math.round( this.mood.math_utility.lookup_table.cos[ this.mood.player.look_horizontal ] * 6.0 )
+            this.mood.player.look_horizontal = this.mood.mood_math.angle_range( this.mood.player.look_horizontal )
+            let delta_y = Math.round( this.mood.mood_math.lookup_table.sin[ this.mood.player.look_horizontal ] * 6.0 )
+            let delta_x = Math.round( this.mood.mood_math.lookup_table.cos[ this.mood.player.look_horizontal ] * 6.0 )
             if( this.mood.inputs.input_status.has( "forward_down" ) && ! this.mood.inputs.input_status.has( "look_up_down" ) ){
                 this.mood.player.position.x += delta_x; this.mood.player.position.y += delta_y
             }

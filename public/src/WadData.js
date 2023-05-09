@@ -133,11 +133,19 @@ export default class WadData {
             this.cache.segs.push( new Segment(
                 vertices[ this.segs[ i ][ 0 ] ],
                 vertices[ this.segs[ i ][ 1 ] ],
-                this.segs[ i ][ 2 ],
+                this.mood.mood_math.binary_angle_to_degree( this.segs[ i ][ 2 ] ),
                 this.segs[ i ][ 4 ],
                 this.segs[ i ][ 5 ],
                 edges[ this.segs[ i ][ 3 ] ]
             ) )
+            /*
+            this.read_2_bytes( lump, i+0, 'int16' ), //Starting vertex index
+            this.read_2_bytes( lump, i+2, 'int16' ), //Ending vertex index
+            this.read_2_bytes( lump, i+4, 'int16' ), //Angle, full circle is -32768 to 32767.
+            this.read_2_bytes( lump, i+6, 'int16' ), //Linedef index
+            this.read_2_bytes( lump, i+8, 'int16' ), //Direction // 0 (same as linedef) or 1 (opposite of linedef)
+            this.read_2_bytes( lump, i+10, 'int16' ) //Offset    // distance along linedef to start of seg
+            */
         }
         return this.cache.segs
     }

@@ -175,27 +175,27 @@ export default class Renderer{
                 break
         }
     }
-    draw_sub_sector( offset_x, offset_y, sub_sector ){
+    draw_editor_sub_sector( offset_x, offset_y, sub_sector ){
         if( sub_sector === null ){ return }
         switch ( this.render_mode ) {
             case "2D" :
             default :
-                this.draw_sub_sector_2D(  offset_x, offset_y, sub_sector )
+                this.draw_editor_sub_sector_2D(  offset_x, offset_y, sub_sector )
                 break
         }
     }
     add_color( color_name, r, g, b ){
         if( typeof this.colors[ color_name ] === "undefined" ) {
             this.colors[color_name] = [
-                this.mood.math_utility.value_range(r, 0, 255),
-                this.mood.math_utility.value_range(g, 0, 255),
-                this.mood.math_utility.value_range(b, 0, 255),
+                this.mood.mood_math.value_range(r, 0, 255),
+                this.mood.mood_math.value_range(g, 0, 255),
+                this.mood.mood_math.value_range(b, 0, 255),
             ]
         }
     }
     get_color( color, alpha = 1 , has_css = false ){
         let c = [ 0, 60,  130 ]
-        let a = this.mood.math_utility.value_range( alpha, 0, 1 )
+        let a = this.mood.mood_math.value_range( alpha, 0, 1 )
         if( typeof this.colors[ color ] !== "undefined" ) {
             c = this.colors[ color ]
         }
@@ -239,7 +239,7 @@ export default class Renderer{
         this.context.fillStyle   = this.get_color( fill_color, fill_alpha, true )
         this.context.lineWidth   = stroke_size
         this.context.beginPath()
-        this.context.arc( x, y, radius, 0, this.mood.math_utility.pi2, false )
+        this.context.arc( x, y, radius, 0, this.mood.mood_math.pi2, false )
         this.context.stroke()
         this.context.fill()
     }
@@ -260,7 +260,7 @@ export default class Renderer{
     }
     draw_text_2D( x, y, text, color = "white", size ){
         this.context.fillStyle   = this.get_color( color, 1, true )
-        this.context.font        = size.toString()+"px"
+        this.context.font        = size.toString()+"px Arial"
         this.context.fillText( text, x, y )
     }
     draw_editor_player_2D( player, color ){
@@ -269,9 +269,9 @@ export default class Renderer{
         let grid_scale             = this.get_from_data_sets( "editor", "grid_scale" )
         let player_position_x      = this.mood.player.position.x * grid_scale - offset_x
         let player_position_y      = this.mood.player.position.y * -1 * grid_scale - offset_y
-        let player_look_horizontal = this.mood.math_utility.angle_range( ( this.mood.player.look_horizontal * -1 ) )
-        let fov_line_1             = this.mood.math_utility.angle_range( ( this.mood.player.look_horizontal * -1 ) + ( this.horisontal_fov / 2 ) )
-        let fov_line_2             = this.mood.math_utility.angle_range( ( this.mood.player.look_horizontal * -1 ) - ( this.horisontal_fov / 2 ) )
+        let player_look_horizontal = this.mood.mood_math.angle_range( ( this.mood.player.look_horizontal * -1 ) )
+        let fov_line_1             = this.mood.mood_math.angle_range( ( this.mood.player.look_horizontal * -1 ) + ( this.horisontal_fov / 2 ) )
+        let fov_line_2             = this.mood.mood_math.angle_range( ( this.mood.player.look_horizontal * -1 ) - ( this.horisontal_fov / 2 ) )
 
         //player position
         this.draw_point_2D( player_position_x, player_position_y, color, 1,color, 1, 4, 4 )
@@ -282,12 +282,12 @@ export default class Renderer{
         this.context.strokeStyle = this.get_color( color, 1, true )
         this.context.fillStyle   = this.get_color( color, .5, true )
         this.context.moveTo(
-            Math.round( player_position_x + 4 * this.mood.math_utility.lookup_table.cos[ player_look_horizontal ] ),
-            Math.round( player_position_y + 4 * this.mood.math_utility.lookup_table.sin[ player_look_horizontal ] )
+            Math.round( player_position_x + 4 * this.mood.mood_math.lookup_table.cos[ player_look_horizontal ] ),
+            Math.round( player_position_y + 4 * this.mood.mood_math.lookup_table.sin[ player_look_horizontal ] )
         )
         this.context.lineTo(
-            Math.round( player_position_x + 20 * this.mood.math_utility.lookup_table.cos[ player_look_horizontal ] ),
-            Math.round( player_position_y + 20 * this.mood.math_utility.lookup_table.sin[ player_look_horizontal ] )
+            Math.round( player_position_x + 20 * this.mood.mood_math.lookup_table.cos[ player_look_horizontal ] ),
+            Math.round( player_position_y + 20 * this.mood.mood_math.lookup_table.sin[ player_look_horizontal ] )
         )
         this.context.stroke()
 
@@ -295,21 +295,27 @@ export default class Renderer{
         this.context.lineWidth   = 1
         this.context.strokeStyle = this.get_color("green", 1, true )
         this.context.fillStyle   = this.get_color( "green", .5, true )
+        this.context.beginPath()
         this.context.moveTo(
-            Math.round( player_position_x + 4 * this.mood.math_utility.lookup_table.cos[ fov_line_1 ] ),
-            Math.round( player_position_y + 4 * this.mood.math_utility.lookup_table.sin[ fov_line_1 ] )
+            Math.round( player_position_x + 4 * this.mood.mood_math.lookup_table.cos[ fov_line_1 ] ),
+            Math.round( player_position_y + 4 * this.mood.mood_math.lookup_table.sin[ fov_line_1 ] )
         )
         this.context.lineTo(
-            Math.round( player_position_x + 500 * this.mood.math_utility.lookup_table.cos[ fov_line_1 ] ),
-            Math.round( player_position_y + 500 * this.mood.math_utility.lookup_table.sin[ fov_line_1 ] )
+            Math.round( player_position_x + 500 * this.mood.mood_math.lookup_table.cos[ fov_line_1 ] ),
+            Math.round( player_position_y + 500 * this.mood.mood_math.lookup_table.sin[ fov_line_1 ] )
         )
+        this.context.stroke()
+
+        this.context.beginPath()
+        this.context.strokeStyle = this.get_color("blue", 1, true )
+        this.context.fillStyle   = this.get_color( "blue", .5, true )
         this.context.moveTo(
-            Math.round( player_position_x + 4 * this.mood.math_utility.lookup_table.cos[ fov_line_2 ] ),
-            Math.round( player_position_y + 4 * this.mood.math_utility.lookup_table.sin[ fov_line_2 ] )
+            Math.round( player_position_x + 4 * this.mood.mood_math.lookup_table.cos[ fov_line_2 ] ),
+            Math.round( player_position_y + 4 * this.mood.mood_math.lookup_table.sin[ fov_line_2 ] )
         )
         this.context.lineTo(
-            Math.round( player_position_x + 500 * this.mood.math_utility.lookup_table.cos[ fov_line_2 ] ),
-            Math.round( player_position_y + 500 * this.mood.math_utility.lookup_table.sin[ fov_line_2 ] )
+            Math.round( player_position_x + 500 * this.mood.mood_math.lookup_table.cos[ fov_line_2 ] ),
+            Math.round( player_position_y + 500 * this.mood.mood_math.lookup_table.sin[ fov_line_2 ] )
         )
         this.context.stroke()
     }
@@ -373,7 +379,7 @@ export default class Renderer{
         }
     }
     draw_editor_sector_in_field_of_view_2D( bsp_tree ){
-        bsp_tree.render_node( this.mood.player, this.draw_sub_sector_2D )
+        bsp_tree.render_node( this.mood.player, this.draw_editor_sub_sector_2D )
     }
     draw_bsp_node_2D = ( bsp_node ) => {
         let offset_x   = this.get_from_data_sets( "editor", "pixel_x_offset" )
@@ -425,24 +431,41 @@ export default class Renderer{
         )
 
     }
-    draw_sub_sector_2D = ( sub_sector ) => {
+    draw_editor_sub_sector_2D = ( sub_sector ) => {
         let offset_x   = this.get_from_data_sets( "editor", "pixel_x_offset" )
         let offset_y   = this.get_from_data_sets( "editor", "pixel_y_offset" )
         let grid_scale = this.get_from_data_sets( "editor", "grid_scale" )
-        sub_sector.segments.forEach( ( segment ) => {
+        for( let i = 0; i < sub_sector.segments.length; i++ ){
+
+            //seg are not facing player
+            let angle_start = this.mood.mood_math.point_to_angle( this.mood.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
+            let angle_end   = this.mood.mood_math.point_to_angle( this.mood.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
+            let angle_span  = this.mood.mood_math.angle_range( angle_start - angle_end, 0, 360, true, false )
+            //if( angle_span < 180 ){ continue }
+
+            //seg are not in bound
+            angle_start =- this.mood.player.look_horizontal
+            let angle_star_span = this.mood.mood_math.angle_range( angle_start + ( this.mood.renderer.horisontal_fov / 2 ), 0, 360, true, false )
+            //if( angle_star_span < 0 && angle_star_span > this.mood.renderer.horisontal_fov ){ continue }
+
+            //seg are not in bound
+            angle_end =- this.mood.player.look_horizontal
+            let angle_end_span = this.mood.mood_math.angle_range( ( this.mood.renderer.horisontal_fov / 2 ) - angle_end, 0, 360, true, false )
+            //if( angle_end_span < 0 && angle_end_span > this.mood.renderer.horisontal_fov ){ continue }
+
             this.add_color(
                 sub_sector.id,
-                this.mood.math_utility.range_random_int(),
-                this.mood.math_utility.range_random_int(),
-                this.mood.math_utility.range_random_int()
+                this.mood.mood_math.range_random_int(),
+                this.mood.mood_math.range_random_int(),
+                this.mood.mood_math.range_random_int()
             )
             this.draw_line(
-                segment.edge.vertices[ 0 ].x * grid_scale - offset_x,
-                segment.edge.vertices[ 0 ].y * -1 * grid_scale - offset_y,
-                segment.edge.vertices[ 1 ].x * grid_scale - offset_x,
-                segment.edge.vertices[ 1 ].y * -1 * grid_scale - offset_y,
+                sub_sector.segments[ i ].edge.vertices[ 0 ].x * grid_scale - offset_x,
+                sub_sector.segments[ i ].edge.vertices[ 0 ].y * -1 * grid_scale - offset_y,
+                sub_sector.segments[ i ].edge.vertices[ 1 ].x * grid_scale - offset_x,
+                sub_sector.segments[ i ].edge.vertices[ 1 ].y * -1 * grid_scale - offset_y,
                 sub_sector.id
             )
-        } )
+        }
     }
 }

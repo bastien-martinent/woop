@@ -1,7 +1,7 @@
 import Int2DVertex from "./Int2DVertex.js"
 import Int3DVertex from "./Int3DVertex.js"
-import MathUtility from "../MathUtility.js"
-const math_3d = new MathUtility()
+import MoodMath from "../MoodMath.js"
+const math_3d = new MoodMath()
 
 export default class Edge {
     constructor( vertex_start, vertex_end, color = 1, facing = 0 ){
