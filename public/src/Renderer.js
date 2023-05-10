@@ -57,9 +57,39 @@ export default class Renderer{
         this.demi_internal_width  = this.internal_width / 2
         this.demi_internal_height = this.internal_height / 2
         this.aspect_ratio         = this.internal_width / this.internal_height
-        this.vertical_fov         = ( this.horisontal_fov * .5 ) / this.aspect_ratio
-        this.vertical_fov         = ( this.horisontal_fov * .5 ) / this.aspect_ratio
-        this.sreen_distance       = this.demi_internal_height / Math.tan( MoodMath.degrees_to_radians( this.vertical_fov  ) )
+        this.vertical_fov         = this.demi_horisontal_fov / this.aspect_ratio
+        this.screen_distance      = this.demi_internal_height / Math.tan( MoodMath.degrees_to_radians( this.vertical_fov  ) )
+        this.screen_range         = [ 1 ]
+
+        MoodMath.init( this )
+    }
+
+    //TODO create a range object
+    init_screen_range = () => {
+        this.screen_range = Array( this.internal_width -1 ).fill( 0 )
+    }
+    range_is_full = ( range = this.screen_range ) => {
+        return ! range.includes( 0 )
+    }
+    range_is_empty = ( range = this.screen_range ) => {
+        return ! range.includes( 1 )
+    }
+    range_has_empty_space = ( range = this.screen_range ) => {
+        return range.includes( 0 )
+    }
+    range_get_empty_space = ( index, max = null, range = this.screen_range ) => {
+        if( index < 0 || index > range.length ){ return 0 }
+        if( max === null ){ max = range.length - 1 }
+        while( range[ index ] === 0 && index <= max  && index < range.length ){ index++ }
+        return index
+    }
+
+    set_screen_range = ( from, to = null ) => {
+        if( to === null ){
+            this.screen_range[ from ] = 1
+            return
+        }
+        for( let i = from; i <= to; i++ ){ this.screen_range[ i ] = 1 }
     }
 
     //useful dataset from editor or game
@@ -90,11 +120,16 @@ export default class Renderer{
         }
     }
     get_color( color, alpha = 1 , has_css = false ){
-        let c = [ 0, 60,  130 ]
         let a = MoodMath.value_range( alpha, 0, 1 )
-        if( typeof this.colors[ color ] !== "undefined" ) {
-            c = this.colors[ color ]
+        if( typeof this.colors[ color ] === "undefined" ) {
+            this.add_color(
+                color,
+                MoodMath.random_int_range( 100, 255 ),
+                MoodMath.random_int_range( 100, 255 ),
+                MoodMath.random_int_range( 100, 255 )
+            )
         }
+        let c = this.colors[ color ]
         if( a === 1  ){
             return ( has_css ) ? "rgb("+c[ 0 ]+","+c[ 1 ]+","+c[ 2 ]+" )" : c
         }
@@ -159,6 +194,9 @@ export default class Renderer{
     }
     draw_game_vertical_line = (x, start_y, end_y, color = "white", alpha = 1  ) => {
         this.draw( 'game_vertical_line', [ x, start_y, end_y, color, alpha ] )
+    }
+    draw_game_edge = ( segment, angle_start, x_star, x_end, color = "white", alpha = 1 ) => {
+        this.draw( 'game_edge', [ segment, angle_start, x_star, x_end, color, alpha ] )
     }
     draw_game_sector_in_field_of_view = ( bsp_tree = this.mood.level.bsp_tree ) => {
         this.draw( 'game_sector_in_field_of_view', [ bsp_tree ] )

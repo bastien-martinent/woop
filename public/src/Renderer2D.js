@@ -248,9 +248,13 @@ export default class Renderer2D extends Renderer{
             let angle_span  = MoodMath.angle_range( angle_start - angle_end, 0, 360, true, false )
             if( angle_span > 180 ){ continue }
 
-            //seg are not in field of view
-            let angle_start_span = MoodMath.angle_range( angle_start - this.mood.player.horizontal_angle + this.mood.renderer.demi_horisontal_fov, 0, 360, true, false )
+            let x1_angle = angle_start - this.mood.player.horizontal_angle
+            let angle_start_span = MoodMath.angle_range( x1_angle + this.mood.renderer.demi_horisontal_fov, 0, 360, true, false )
             if( angle_start_span > angle_span + this.mood.renderer.horisontal_fov ){ continue }
+
+            let x2_angle = angle_end - this.mood.player.horizontal_angle
+            let angle_end_span = MoodMath.angle_range( this.mood.renderer.demi_horisontal_fov - x2_angle, 0, 360, true, false )
+            if( angle_end_span > angle_span + this.mood.renderer.horisontal_fov ){ continue }
 
             this.add_color(
                 sub_sector.id,
@@ -290,6 +294,7 @@ export default class Renderer2D extends Renderer{
             }
         }
     }
+
     draw_game_vertical_line_2D = ( x, start_y, end_y, color, alpha ) => {
         if( start_y === end_y ){ this.draw_game_pixel( x, start_y, color, alpha ) }
         if( x < 0 || x > this.internal_width ){ return }
@@ -298,11 +303,75 @@ export default class Renderer2D extends Renderer{
             this.draw_game_pixel( x, y, color, alpha )
         }
     }
+
+    draw_game_edge_2D = ( segment, angle_start, x_start, x_end, color, alpha ) => {
+
+        let edge      = segment.edge
+        let edge_side = edge.left
+        let sector    = edge_side.sector
+
+        let wall_texture    = edge_side.textures.middle
+        let floor_texture   = sector.floor.texture
+        let celling_texture = sector.celling.texture
+        let wall_light      = edge_side.light
+        let floor_light     = sector.floor.texture
+        let celling_light   = sector.celling.texture
+
+        let relative_floor_height   = sector.floor.height - this.mood.player.position.z
+        let relative_celling_height = sector.celling.height - this.mood.player.position.z
+
+        let edge_is_draw    = ( wall_texture !== false )
+        let floor_is_draw   = ( relative_floor_height < 0 )
+        let celling_is_draw = ( relative_celling_height < 0 )
+
+        let edge_normal  = edge.angle + 90
+        let offset_angle = edge_normal - angle_start
+        let hypotenuse   = MoodMath.distance( this.mood.player.position, edge.vertices[ 0 ] )
+        let distance     = hypotenuse * Math.cos( MoodMath.degrees_to_radians( offset_angle ) )
+
+        let scale_start  = MoodMath.scale(
+            x_start, edge_normal, distance,
+            this.screen_distance, this.mood.player.horizontal_angle
+        )
+
+        let scale_step = 0
+        if( x_start < x_end ){
+            let scale_end = MoodMath.scale( x_end, edge_normal, distance, this.screen_distance, this.mood.player.horizontal_angle )
+            scale_step = ( scale_end - scale_start ) / ( x_end - x_start )
+        }
+
+        let edge_start_y      = this.demi_internal_height - relative_celling_height * scale_start
+        let edge_start_y_step = ( scale_step * -1 ) * relative_celling_height
+
+        let edge_end_y        = this.demi_internal_height - relative_floor_height * scale_start
+        let edge_end_y_step   = ( scale_step * -1 ) * relative_floor_height
+
+        let start_y = edge_start_y
+        let end_y   = edge_end_y
+
+        for( let x = x_start; x <= x_end; x++ ){
+            if( celling_is_draw ){
+
+            }
+            if( edge_is_draw ){
+                this.draw_game_vertical_line( x, Math.round( start_y ), Math.round( end_y ), color, alpha )
+            }
+            if( floor_is_draw ){
+
+            }
+            start_y += edge_start_y_step
+            end_y   += edge_end_y_step
+        }
+
+
+    }
+
     draw_game_sector_in_field_of_view_2D = ( bsp_tree ) => {
-        bsp_tree.render_nodes( this.mood.player, this.draw_game_sub_sector_2D )
+        this.init_screen_range()
+        bsp_tree.render_nodes( this.mood.player, this.draw_game_sub_sector_2D, this.range_is_full )
     }
     draw_game_sub_sector_2D = ( sub_sector ) => {
-        for( let i = 0; i < sub_sector.segments.length; i++ ){
+        for( let i = 0; i < sub_sector.segments.length && this.range_has_empty_space(); i++ ){
             //seg are not facing player
             let angle_start = MoodMath.point_to_angle( this.mood.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
             let angle_end   = MoodMath.point_to_angle( this.mood.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
@@ -310,22 +379,40 @@ export default class Renderer2D extends Renderer{
             if( angle_span > 180 ){ continue }
 
             //seg are not in field of view
-            let angle_start_span = MoodMath.angle_range( angle_start - this.mood.player.horizontal_angle + this.mood.renderer.demi_horisontal_fov, 0, 360, true, false )
-            if( angle_start_span > angle_span + this.mood.renderer.horisontal_fov ){ continue }
+            let x1_angle = angle_start - this.mood.player.horizontal_angle
+            let angle_start_span = MoodMath.angle_range( x1_angle + this.mood.renderer.demi_horisontal_fov, 0, 360, true, false )
+            if( angle_start_span >= angle_span + this.mood.renderer.horisontal_fov ){ continue }
 
-            //TODO::clip edge
+            let x2_angle = angle_end - this.mood.player.horizontal_angle
+            let angle_end_span = MoodMath.angle_range( this.mood.renderer.demi_horisontal_fov - x2_angle, 0, 360, true, false )
+            if( angle_end_span >= angle_span + this.mood.renderer.horisontal_fov ){ continue }
 
-            //TODO::draw stuff
-            this.add_color(
-                sub_sector.id,
-                MoodMath.random_int_range( 100, 255 ),
-                MoodMath.random_int_range( 100, 255 ),
-                MoodMath.random_int_range( 100, 255 )
+            let x1 = MoodMath.value_range(
+                MoodMath.angle_to_screen_x( x1_angle, this.screen_distance, this.demi_internal_width ),
+                0, this.screen_range.length
             )
-            let x1 = MoodMath.angle_to_screen_x( this, angle_start - this.mood.player.horizontal_angle )
-            let x2 = MoodMath.angle_to_screen_x( this, angle_end - this.mood.player.horizontal_angle )
-            this.draw_game_vertical_line( x1, 0, this.internal_height,  sub_sector.id )
-            this.draw_game_vertical_line( x2, 0, this.internal_height, sub_sector.id )
+            let x2 = MoodMath.value_range(
+                MoodMath.angle_to_screen_x( x2_angle, this.screen_distance, this.demi_internal_width ),
+                0, this.screen_range.length
+            )
+            if( sub_sector.segments[ i ].edge.right === false ){
+                let wall_range = this.screen_range.slice( x1, x2 )
+                if( this.range_is_empty( wall_range ) ){
+                    this.draw_game_edge( sub_sector.segments[ i ], angle_start, x1, x2, sub_sector.id )
+                    this.set_screen_range( x1, x2 )
+                }else if( this.range_has_empty_space( wall_range ) ){
+                    for( let x = x1; x <= x2; x++ ){
+                        if( this.screen_range[ x ] === 0 ){
+                            let emptiness_end = Math.min( this.range_get_empty_space( x, x2 ) )
+                            this.draw_game_edge( sub_sector.segments[ i ], angle_start, x, emptiness_end, sub_sector.id )
+                            this.set_screen_range( x, emptiness_end )
+                            x = emptiness_end
+                        }
+                    }
+                }
+
+            }
+
         }
     }
 }

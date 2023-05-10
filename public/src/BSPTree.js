@@ -4,28 +4,28 @@ import MoodMath from "./MoodMath.js"
 export class BSPTree{
     constructor( mood, nodes ) {
         this.mood  = mood
-        this.root  = nodes[ nodes.length-1 ]
         this.nodes = nodes
+        this.root  = nodes[ nodes.length-1 ]
     }
-    render_nodes( player, draw_callback, node = this.root ){
+    render_nodes( player, draw_callback, interrupt_callback = () => { return false }, node = this.root, ){
+        if( interrupt_callback() ){ return }
         if( node instanceof SubSector ){
             //leaf are SubSector object
             draw_callback( node )
             return
         }
         if( this.is_right( player, node ) ){
-            this.render_nodes( player, draw_callback, node.right )
+            this.render_nodes( player, draw_callback, interrupt_callback, node.right )
             if( this.check_bound_box( player, node.left_bound_box ) ){
-                this.render_nodes( player, draw_callback, node.left )
+                this.render_nodes( player, draw_callback, interrupt_callback, node.left )
             }
         }else{
-            this.render_nodes( player, draw_callback, node.left )
+            this.render_nodes( player, draw_callback, interrupt_callback, node.left )
             if( this.check_bound_box( player, node.right_bound_box ) ){
-                this.render_nodes( player, draw_callback, node.right )
+                this.render_nodes( player, draw_callback, interrupt_callback, node.right )
             }
         }
     }
-    //?? do not work ???
     is_right( player, node ){
         let delta_x = player.position.x - node.partition_line.start.x
         let delta_y = player.position.y - node.partition_line.start.y
@@ -88,7 +88,6 @@ export class BSPNode{
         this.partition_line   = partition_line
     }
 }
-
 export class BoundBox{
     constructor( top_left, bottom_right ){
         this.top_left     = top_left
@@ -110,11 +109,58 @@ export class SubSector{
     }
 }
 export class Segment{
-    constructor( vertex_start, vertex_end, angle, direction, offset, edge ){
+    constructor( vertex_start, vertex_end, angle, offset, edge ){
         this.vertices = [ vertex_start, vertex_end ]
-        this.angle = angle
-        this.direction = direction
-        this.offset = offset
-        this.edge = edge
+        this.angle    = angle
+        this.offset   = offset
+        this.edge     = edge
+    }
+}
+export class Edge {
+    constructor( vertex_start, vertex_end, direction, angle, right, left, attributes = {} ){
+        this.vertices   = [ vertex_start, vertex_end ]
+        this.direction  = direction
+        this.angle      = angle
+        this.right      = right
+        this.left       = left
+        this.attributes = attributes
+    }
+    set_direction( direction ){
+        if( this.direction !== direction && [ 0,1 ].includes( direction ) ){
+            this.direction = direction
+            let swap       = this.right
+            this.right     = this.left
+            this.left      = swap
+        }
+    }
+    set_angle( angle ){
+        this.angle = MoodMath.angle_range( angle, 0, 360, true, false )
+    }
+}
+export class EdgeSide {
+    constructor( offset, sector, light, upper_textures, middle_textures, lower_textures, attributes = {} ){
+        this.offset     = offset
+        this.sector     = sector
+        this.light      = light
+        this.textures   = {
+            up     : upper_textures,
+            middle : middle_textures,
+            low    : lower_textures,
+        }
+        this.attributes = attributes
+    }
+}
+export class Sector {
+    constructor( ceiling_height, floor_height, ceiling_textures, floor_texture, ceiling_light, floor_light, ){
+        this.celling = {
+            height  : ceiling_height,
+            texture : ceiling_textures,
+            light   : ceiling_light
+        }
+        this.floor = {
+            height  : floor_height,
+            texture : floor_texture,
+            light   : floor_light
+        }
     }
 }

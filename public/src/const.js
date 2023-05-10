@@ -3,10 +3,12 @@ export const GAME_STATES = {
     GAME   : 1,
     EDITOR : 2,
 }
+
 export const CURSORS = {
     ARROW : 0,
     GRAB  : 1,
 }
+
 export const DOOM = {
     MAP_LUMPS : {
         THINGS   : 1,

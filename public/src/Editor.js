@@ -78,8 +78,8 @@ export default class Editor{
                 renderer.draw_editor_point( vertex.x , vertex.y )
             } )
             //draw edge
-            this.mood.level.edges.forEach( ( edge ) => {
-                renderer.draw_editor_line( edge.vertices[ 0 ].x, edge.vertices[ 0 ].y, edge.vertices[ 1 ].x, edge.vertices[ 1 ].y )
+            this.mood.level.segments.forEach( ( segment ) => {
+                renderer.draw_editor_line( segment.vertices[ 0 ].x, segment.vertices[ 0 ].y, segment.vertices[ 1 ].x, segment.vertices[ 1 ].y )
             } )
             //draw from bsp tree
             renderer.draw_editor_sector_in_field_of_view()

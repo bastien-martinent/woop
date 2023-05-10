@@ -1,7 +1,6 @@
 import Int2DVertex from "./type/Int2DVertex.js"
-import Edge from "./type/Edge.js"
 import Int3DVertex from "./type/Int3DVertex.js"
-import {BoundBox, PartitionLine, BSPNode, BSPTree, SubSector, Segment} from "./BSPTree.js"
+import { BSPTree, BSPNode, BoundBox, PartitionLine, SubSector, Segment, Edge, EdgeSide, Sector } from "./BSPTree.js"
 import MoodMath from "./MoodMath.js"
 
 export default class WadData {
@@ -36,20 +35,24 @@ export default class WadData {
         ]
         return this.cache.boundary
     }
+
     get_size(){
         if( typeof this.cache.size !== "undefined" ){ return this.cache.size }
         let boundary = this.get_boundary()
         this.cache.size = new Int2DVertex( boundary[ 0 ].x - boundary[ 1 ].x, boundary[ 0 ].y - boundary[ 1 ].y )
         return this.cache.size
     }
+
     get_player_start(){
         let things = this.get_things()
+        //TODO::find player start sector and update position z value
         return {
-            position         : new Int3DVertex( things[ 0 ].position.x, things[ 0 ].position.y, 20 ),
+            position         : new Int3DVertex( things[ 0 ].position.x, things[ 0 ].position.y, 45  ),
             horizontal_angle : things[ 0 ].angle,
             vertical_angle   : 0
         }
     }
+
     get_things( ){
         if( typeof this.cache.things !== "undefined" ){ return this.cache.things }
         this.cache.things = []
@@ -63,26 +66,7 @@ export default class WadData {
         }
         return this.cache.things
     }
-    get_vertices(){
-        if( typeof this.cache.vertices !== "undefined" ){ return this.cache.vertices }
-        this.cache.vertices = []
-        for( let i = 0; i < this.vertices.length; i++ ){
-            this.cache.vertices.push( new Int2DVertex( this.vertices[ i ][ 0 ], this.vertices[ i ][ 1 ] ) )
-        }
-        return this.cache.vertices
-    }
-    get_edges(){
-        if( typeof this.cache.edges !== "undefined" ){ return this.cache.edges }
-        let vertices     = this.get_vertices()
-        this.cache.edges = []
-        for( let i = 0; i < this.linedefs.length; i++ ){
-            this.cache.edges.push( new Edge(
-                vertices[ this.linedefs[ i ][ 0 ] ],
-                vertices[ this.linedefs[ i ][ 1 ] ]
-            ) )
-        }
-        return this.cache.edges
-    }
+
     get_bsp_tree(){
         if( typeof this.cache.nodes !== "undefined" ){ return this.cache.nodes }
         let sub_sectors  = this.get_sub_sectors()
@@ -110,8 +94,9 @@ export default class WadData {
                 )
             )
         }
-        return new BSPTree( this.mood, this.cache.nodes)
+        return new BSPTree( this.mood, this.cache.nodes )
     }
+
     get_sub_sectors(){
         if( typeof this.cache.ssectors !== "undefined" ){ return this.cache.ssectors }
         let segments        = this.get_segments()
@@ -125,22 +110,102 @@ export default class WadData {
         }
         return this.cache.ssectors
     }
+
     get_segments(){
         if( typeof this.cache.segs !== "undefined" ){ return this.cache.segs }
         let vertices    = this.get_vertices()
-        let edges       = this.get_edges()
+        let edges       = this.get_linedefs()
         this.cache.segs = []
         for( let i = 0; i < this.segs.length; i++ ){
+            edges[ this.segs[ i ][ 3 ] ].set_direction( this.segs[ i ][ 4 ] )
+            edges[ this.segs[ i ][ 3 ] ].set_angle( MoodMath.binary_angle_to_degree( this.segs[ i ][ 2 ] ), )
             this.cache.segs.push( new Segment(
                 vertices[ this.segs[ i ][ 0 ] ],
                 vertices[ this.segs[ i ][ 1 ] ],
                 MoodMath.binary_angle_to_degree( this.segs[ i ][ 2 ] ),
-                this.segs[ i ][ 4 ],
                 this.segs[ i ][ 5 ],
                 edges[ this.segs[ i ][ 3 ] ]
             ) )
         }
         return this.cache.segs
     }
+
+    get_vertices(){
+        if( typeof this.cache.vertices !== "undefined" ){ return this.cache.vertices }
+        this.cache.vertices = []
+        for( let i = 0; i < this.vertices.length; i++ ){
+            this.cache.vertices.push( new Int2DVertex(
+                this.vertices[ i ][ 0 ],
+                this.vertices[ i ][ 1 ]
+            ) )
+        }
+        return this.cache.vertices
+    }
+
+    get_linedefs(){
+        if( typeof this.cache.linedefs !== "undefined" ){ return this.cache.linedefs }
+        let vertices     = this.get_vertices()
+        let sidedefs     = this.get_sidedefs()
+        this.cache.linedefs = []
+        for( let i = 0; i < this.linedefs.length; i++ ){
+            this.cache.linedefs.push( new Edge(
+                vertices[ this.linedefs[ i ][ 0 ] ],
+                vertices[ this.linedefs[ i ][ 1 ] ],
+                1,
+                0,
+                ( this.linedefs[ i ][ 5 ] !== -1 )
+                    ? sidedefs[ this.linedefs[ i ][ 5 ] ] : false,
+                ( this.linedefs[ i ][ 6 ] !== -1 )
+                        ? sidedefs[ this.linedefs[ i ][ 5 ] ] : false,
+                sidedefs[ this.linedefs[ i ][ 5 ] ],
+                sidedefs[ this.linedefs[ i ][ 6 ] ],
+                {
+                    doom_fag          : this.linedefs[i][2],
+                    doom_special_type : this.linedefs[i][3],
+                    doom_sector_tag   : this.linedefs[i][4],
+
+                }
+            ) )
+        }
+        return this.cache.linedefs
+    }
+
+    get_sidedefs(){
+        if( typeof this.cache.sidedef !== "undefined" ){ return this.cache.sidedef }
+        this.cache.sidedef = []
+        let sector       = this.get_sectors()
+        for( let i = 0; i < this.sidedef.length; i++ ){
+            this.cache.sidedef.push( new EdgeSide(
+                new Int2DVertex( this.sidedef[ i ][ 0 ], this.sidedef[ i ][ 1 ] ),
+                sector[ this.sidedef[ i ][ 5 ] ],
+                sector[ this.sidedef[ i ][ 5 ] ].celling.light,
+                ( this.sidedef[ i ][ 2 ] !== "-" ) ? this.sidedef[ i ][ 2 ] : false,
+                ( this.sidedef[ i ][ 4 ] !== "-" ) ? this.sidedef[ i ][ 4 ] : false,
+                ( this.sidedef[ i ][ 3 ] !== "-" ) ? this.sidedef[ i ][ 3 ] : false,
+                {
+                    doom_special_type : this.sidedef[i][5],
+                    doom_tag_number   : this.sidedef[i][6]
+                }
+            ) )
+        }
+        return this.cache.sidedef
+    }
+
+    get_sectors(){
+        if( typeof this.cache.sectors !== "undefined" ){ return this.cache.sectors }
+        this.cache.sectors = []
+        for( let i = 0; i < this.sectors.length; i++ ){
+            this.cache.sectors.push( new Sector(
+                this.sectors[ i ][ 1 ],
+                this.sectors[ i ][ 0 ],
+                ( this.sectors[ i ][ 3 ] !== "-" ) ? this.sectors[ i ][ 3 ] : false,
+                ( this.sectors[ i ][ 2 ] !== "-" ) ? this.sectors[ i ][ 2 ] : false,
+                this.sectors[ i ][ 4 ],
+                this.sectors[ i ][ 4 ],
+            ) )
+        }
+        return this.cache.sectors
+    }
+
 
 }

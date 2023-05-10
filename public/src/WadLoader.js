@@ -185,37 +185,7 @@ export default class WadLoader {
         }
         return things
     }
-    read_lindefs_from_lump( map_index ){
-        let lump    = this.cache_lump( map_index + DOOM.MAP_LUMPS.LINEDEFS )
-        let lindefs = []
-        for( let i = 0; i < lump.byteLength; i = i + 14 ){
-            lindefs.push( [
-                this.read_2_bytes( lump, i+0, 'int16' ),  //Start Vertex index
-                this.read_2_bytes( lump, i+2, 'int16' ),  //End Vertex index
-                this.read_2_bytes( lump, i+4, 'int16' ),  //Flags
-                this.read_2_bytes( lump, i+6, 'int16' ),  //Special Type
-                this.read_2_bytes( lump, i+8, 'int16' ),  //Sector Tag
-                this.read_2_bytes( lump, i+10, 'int16' ), //Front Sidedef index
-                this.read_2_bytes( lump, i+12, 'int16' )  //Back Sidedef index
-            ] )
-        }
-        return lindefs
-    }
-    read_sidedef_from_lump( map_index ){
-        let lump  = this.cache_lump( map_index + DOOM.MAP_LUMPS.SIDEDEFS )
-        let sidedefs = []
-        for( let i = 0; i < lump.byteLength; i = i + 30 ){
-            sidedefs.push( [
-                this.read_2_bytes( lump, i+0, 'int16' ), //x offset
-                this.read_2_bytes( lump, i+2, 'int16' ), //y offset
-                this.read_string( lump, i+4, 8 ),        //Name of upper texture
-                this.read_string( lump, i+12, 8 ),       //Name of lower texture
-                this.read_string( lump, i+20, 8 ),       //Name of middle texture
-                this.read_2_bytes( lump, i+28, 'int16' ) //Sector number this sidedef 'faces'
-            ] )
-        }
-        return sidedefs
-    }
+
     read_vertices_from_lump( map_index ){
         let lump     = this.cache_lump( map_index + DOOM.MAP_LUMPS.VERTEXES )
         let vertices = []
@@ -227,32 +197,7 @@ export default class WadLoader {
         }
         return vertices
     }
-    read_segs_from_lump( map_index ){
-        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.SEGS )
-        let segs = []
-        for( let i = 0; i < lump.byteLength; i = i+12 ){
-            segs.push( [
-                this.read_2_bytes( lump, i+0, 'int16' ), //Starting vertex index
-                this.read_2_bytes( lump, i+2, 'int16' ), //Ending vertex index
-                this.read_2_bytes( lump, i+4, 'int16' ), //Angle, full circle is -32768 to 32767.
-                this.read_2_bytes( lump, i+6, 'int16' ), //Linedef index
-                this.read_2_bytes( lump, i+8, 'int16' ), //Direction // 0 (same as linedef) or 1 (opposite of linedef)
-                this.read_2_bytes( lump, i+10, 'int16' ) //Offset    // distance along linedef to start of seg
-            ] )
-        }
-        return segs
-    }
-    read_ssectors_from_lump( map_index ){
-        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.SSECTORS )
-        let ssectors = []
-        for( let i = 0; i < lump.byteLength; i = i+4 ){
-            ssectors.push( [
-                this.read_2_bytes( lump, i+0, 'int16' ), //Seg count
-                this.read_2_bytes( lump, i+2, 'int16' )  //First seg index
-            ] )
-        }
-        return ssectors
-    }
+
     read_nodes_from_lump( map_index ){
         let lump   = this.cache_lump( map_index + DOOM.MAP_LUMPS.NODES )
         let nodes  = []
@@ -270,6 +215,68 @@ export default class WadLoader {
         }
         return nodes
     }
+
+    read_ssectors_from_lump( map_index ){
+        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.SSECTORS )
+        let ssectors = []
+        for( let i = 0; i < lump.byteLength; i = i+4 ){
+            ssectors.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ), //Seg count
+                this.read_2_bytes( lump, i+2, 'int16' )  //First seg index
+            ] )
+        }
+        return ssectors
+    }
+
+    read_segs_from_lump( map_index ){
+        let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.SEGS )
+        let segs = []
+        for( let i = 0; i < lump.byteLength; i = i+12 ){
+            segs.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ), //Starting vertex index
+                this.read_2_bytes( lump, i+2, 'int16' ), //Ending vertex index
+                this.read_2_bytes( lump, i+4, 'int16' ), //Angle, full circle is -32768 to 32767.
+                this.read_2_bytes( lump, i+6, 'int16' ), //Linedef index
+                this.read_2_bytes( lump, i+8, 'int16' ), //Direction // 0 (same as linedef) or 1 (opposite of linedef)
+                this.read_2_bytes( lump, i+10, 'int16' ) //Offset    // distance along linedef to start of seg
+            ] )
+        }
+        return segs
+    }
+
+    read_lindefs_from_lump( map_index ){
+        let lump    = this.cache_lump( map_index + DOOM.MAP_LUMPS.LINEDEFS )
+        let lindefs = []
+        for( let i = 0; i < lump.byteLength; i = i + 14 ){
+            lindefs.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ),  //Start Vertex index
+                this.read_2_bytes( lump, i+2, 'int16' ),  //End Vertex index
+                this.read_2_bytes( lump, i+4, 'int16' ),  //Flags
+                this.read_2_bytes( lump, i+6, 'int16' ),  //Special Type
+                this.read_2_bytes( lump, i+8, 'int16' ),  //Sector Tag
+                this.read_2_bytes( lump, i+10, 'int16' ), //Front Sidedef index
+                this.read_2_bytes( lump, i+12, 'int16' )  //Back Sidedef index
+            ] )
+        }
+        return lindefs
+    }
+
+    read_sidedef_from_lump( map_index ){
+        let lump  = this.cache_lump( map_index + DOOM.MAP_LUMPS.SIDEDEFS )
+        let sidedefs = []
+        for( let i = 0; i < lump.byteLength; i = i + 30 ){
+            sidedefs.push( [
+                this.read_2_bytes( lump, i+0, 'int16' ), //x offset
+                this.read_2_bytes( lump, i+2, 'int16' ), //y offset
+                this.read_string( lump, i+4, 8 ),        //Name of upper texture
+                this.read_string( lump, i+12, 8 ),       //Name of lower texture
+                this.read_string( lump, i+20, 8 ),       //Name of middle texture
+                this.read_2_bytes( lump, i+28, 'int16' ) //Sector number this sidedef 'faces'
+            ] )
+        }
+        return sidedefs
+    }
+
     read_sectors_from_lump( map_index ){
         let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.SECTORS )
         let sectors = []
@@ -286,6 +293,7 @@ export default class WadLoader {
         }
         return sectors
     }
+
     read_reject_from_lump( map_index ){
         let lump = this.cache_lump( map_index + DOOM.MAP_LUMPS.REJECT )
         return lump

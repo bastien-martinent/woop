@@ -8,7 +8,7 @@ export default class Game{
     }
     update = () => {
         if( this.mood.inputs.mouse_lock ){
-            this.mood.player.horizontal_angle += Math.round( this.mood.inputs.mouse_movements.x / 8 )
+            this.mood.player.horizontal_angle -= Math.round( this.mood.inputs.mouse_movements.x / 8 )
         }else{
             if( this.mood.inputs.input_status.has( "look_left_down" ) ){ this.mood.player.horizontal_angle  += 2 }
             if( this.mood.inputs.input_status.has( "look_right_down" ) ){ this.mood.player.horizontal_angle -= 2 }
