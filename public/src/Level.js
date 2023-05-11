@@ -3,8 +3,8 @@ import Int3DVertex from "./type/Int3DVertex.js"
 import Player from "./Player.js"
 
 export default class Level{
-    constructor( mood ){
-        this.mood     = mood
+    constructor( woop ){
+        this.woop     = woop
         this.name     = 'void'
         this.vertices = []
         this.segments = []

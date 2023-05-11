@@ -1,11 +1,11 @@
 import Int2DVertex from "./type/Int2DVertex.js"
 import Int3DVertex from "./type/Int3DVertex.js"
 import { BSPTree, BSPNode, BoundBox, PartitionLine, SubSector, Segment, Edge, EdgeSide, Sector } from "./BSPTree.js"
-import MoodMath from "./MoodMath.js"
+import WoopMath from "./WoopMath.js"
 
 export default class WadData {
-    constructor( mood, things, linedefs, sidedef, vertices, segs, ssectors, nodes, sectors, reject, blockmap ){
-        this.mood     = mood
+    constructor( woop, things, linedefs, sidedef, vertices, segs, ssectors, nodes, sectors, reject, blockmap ){
+        this.woop     = woop
         this.cache    = []
         this.things   = things
         this.linedefs = linedefs
@@ -94,7 +94,7 @@ export default class WadData {
                 )
             )
         }
-        return new BSPTree( this.mood, this.cache.nodes )
+        return new BSPTree( this.woop, this.cache.nodes )
     }
 
     get_sub_sectors(){
@@ -118,11 +118,11 @@ export default class WadData {
         this.cache.segs = []
         for( let i = 0; i < this.segs.length; i++ ){
             edges[ this.segs[ i ][ 3 ] ].set_direction( this.segs[ i ][ 4 ] )
-            edges[ this.segs[ i ][ 3 ] ].set_angle( MoodMath.binary_angle_to_degree( this.segs[ i ][ 2 ] ), )
+            edges[ this.segs[ i ][ 3 ] ].set_angle( WoopMath.binary_angle_to_degree( this.segs[ i ][ 2 ] ), )
             this.cache.segs.push( new Segment(
                 vertices[ this.segs[ i ][ 0 ] ],
                 vertices[ this.segs[ i ][ 1 ] ],
-                MoodMath.binary_angle_to_degree( this.segs[ i ][ 2 ] ),
+                WoopMath.binary_angle_to_degree( this.segs[ i ][ 2 ] ),
                 this.segs[ i ][ 5 ],
                 edges[ this.segs[ i ][ 3 ] ]
             ) )

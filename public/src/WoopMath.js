@@ -1,4 +1,4 @@
-export default class MoodMath {
+export default class WoopMath {
 
     static is_init       = false
     static lookup_tables = { cos : [], sin : [], x_to_angle : [] }
@@ -24,7 +24,7 @@ export default class MoodMath {
 
     static lookup_x_to_angle = ( value ) => {
         if( ! this.is_init ){
-            console.log( 'MoodMath need to be init ( after the renderer ) for assessing the lookup table function' )
+            console.log( 'WoopMath need to be init ( after the renderer ) for assessing the lookup table function' )
             return null
         }
         return this.lookup_tables.x_to_angle[ value ]
@@ -32,14 +32,14 @@ export default class MoodMath {
 
     static lookup_cos = ( value ) => {
         if( ! this.is_init ){
-            console.log( 'MoodMath need to be init for assessing the lookup table function' )
+            console.log( 'WoopMath need to be init for assessing the lookup table function' )
             return null
         }
         return this.lookup_tables.cos[ this.angle_range( value ) ]
     }
     static lookup_sin = ( value ) => {
         if( ! this.is_init ){
-            console.log( 'MoodMath need to be init for assessing the lookup table function' )
+            console.log( 'WoopMath need to be init for assessing the lookup table function' )
             return null
         }
         return this.lookup_tables.sin[ this.angle_range( value ) ]
@@ -47,10 +47,10 @@ export default class MoodMath {
 
     //TODO::redo
     static scale = ( x, edge_normal, distance, screen_distance, player_angle ) => {
-        let x_angle = MoodMath.lookup_x_to_angle( x )
-        let num = screen_distance * Math.cos( MoodMath.degrees_to_radians( edge_normal - x_angle - player_angle ) )
-        let den = distance * Math.cos( MoodMath.degrees_to_radians( x_angle ) )
-        let scale = num / den
+        let x_angle = WoopMath.lookup_x_to_angle( x )
+        let num     = screen_distance * Math.cos( WoopMath.degrees_to_radians( edge_normal - x_angle - player_angle ) )
+        let den     = distance * Math.cos( WoopMath.degrees_to_radians( x_angle ) )
+        let scale   = num / den
         return Math.min( Math.max( scale, this.min_scale ), this.max_scale )
     }
 

@@ -1,9 +1,9 @@
 import Int2DVertex from "./type/Int2DVertex.js"
-import MoodMath from "./MoodMath.js"
+import WoopMath from "./WoopMath.js"
 
 export class BSPTree{
-    constructor( mood, nodes ) {
-        this.mood  = mood
+    constructor( woop, nodes ) {
+        this.woop  = woop
         this.nodes = nodes
         this.root  = nodes[ nodes.length-1 ]
     }
@@ -68,11 +68,11 @@ export class BSPTree{
             }
         }
         for( let i = 0; i < box_sides.length; i++ ){
-            let angle_start  = MoodMath.angle_range( MoodMath.point_to_angle( player.position, box_sides[ i ][ 0 ] ),0, 360, true, false )
-            let angle_end    = MoodMath.angle_range( MoodMath.point_to_angle( player.position, box_sides[ i ][ 1 ] ), 0, 360, true, false )
-            let angle_span   = MoodMath.angle_range( angle_start - angle_end, 0, 360, true, false )
-            let angle_span_1 = MoodMath.angle_range( angle_start - player.horizontal_angle + this.mood.renderer.demi_horisontal_fov , 0, 360, true, false )
-            if( angle_span_1 < this.mood.renderer.horisontal_fov + angle_span ){ return true }
+            let angle_start  = WoopMath.angle_range( WoopMath.point_to_angle( player.position, box_sides[ i ][ 0 ] ),0, 360, true, false )
+            let angle_end    = WoopMath.angle_range( WoopMath.point_to_angle( player.position, box_sides[ i ][ 1 ] ), 0, 360, true, false )
+            let angle_span   = WoopMath.angle_range( angle_start - angle_end, 0, 360, true, false )
+            let angle_span_1 = WoopMath.angle_range( angle_start - player.horizontal_angle + this.woop.renderer.demi_horisontal_fov , 0, 360, true, false )
+            if( angle_span_1 < this.woop.renderer.horisontal_fov + angle_span ){ return true }
         }
         return false
     }
@@ -134,7 +134,7 @@ export class Edge {
         }
     }
     set_angle( angle ){
-        this.angle = MoodMath.angle_range( angle, 0, 360, true, false )
+        this.angle = WoopMath.angle_range( angle, 0, 360, true, false )
     }
 }
 export class EdgeSide {

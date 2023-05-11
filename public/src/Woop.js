@@ -7,7 +7,7 @@ import Debugger from "./Debugger.js"
 import Renderer2D from "./Renderer2D.js"
 import InputManager from "./InputManager.js"
 
-class Mood{
+export default class Woop{
     constructor( canvas, options = {} ){
         let render_mode   = ( options.render !== undefined ) ? options.render : '2D'
         let pixel_scale   = ( options.scale !== undefined ) ? options.scale : 4
@@ -46,14 +46,14 @@ class Mood{
             last_frame_count  : 0,
             last_second       : 0,
         }
-        this.mood_loop()
+        this.woop_loop()
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    mood_loop = () => {
+    woop_loop = () => {
         let slice          = ( 1 / this.time.target_frame_rate ) - 0.005
         let accumulator    = ( performance.now() / 1000 ) - this.time.unscaledTime
         let current_second = Math.floor( performance.now() / 1000 )
@@ -70,11 +70,12 @@ class Mood{
             this.debbuger.update()
 
             accumulator -= slice
-            this.time.frame_count++ // what what what ???
+
         }
 
         this.render()
         this.debbuger.render()
+        this.time.frame_count++
 
         if( this.time.last_second < current_second ){
             this.time.last_second       = current_second
@@ -82,7 +83,7 @@ class Mood{
             this.time.frame_count      = 0
         }
 
-        requestAnimationFrame( () => { this.mood_loop() }  )
+        requestAnimationFrame( () => { this.woop_loop() }  )
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,10 +95,14 @@ class Mood{
 
         switch ( this.game_state ){
             case GAME_STATES.GAME :
-                if( this.inputs.input_status.has( "editor_mode_release" ) ){ this.game_state = GAME_STATES.EDITOR }
+                if( this.inputs.input_status.has( "editor_mode_release" ) ){
+                    this.game_state = GAME_STATES.EDITOR
+                }
                 break
             case GAME_STATES.EDITOR :
-                if( this.inputs.input_status.has( "game_mode_release" ) ){ this.game_state = GAME_STATES.GAME }
+                if( this.inputs.input_status.has( "game_mode_release" ) ){
+                    this.game_state = GAME_STATES.GAME
+                }
                 break
         }
 
@@ -123,20 +128,4 @@ class Mood{
                 break
         }
     }
-}
-
-window.onload = ()=>{
-
-    let mood = new Mood(
-        document.getElementById("mood"),
-        {
-            render        : "2D",
-            field_of_view : 90,
-            scale         : 4,
-            debug         : true,
-        }
-    )
-
-    mood.run()
-
 }

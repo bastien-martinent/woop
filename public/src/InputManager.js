@@ -1,6 +1,6 @@
 export default class InputManager{
-    constructor( mood ) {
-        this.mood              = mood
+    constructor( woop ) {
+        this.woop              = woop
         this.mouse_lock        = false
         this.input_status      = new Set()
         this.keys_press        = {
@@ -110,8 +110,8 @@ export default class InputManager{
                 document.removeEventListener( "mousedown", this.update_mouse_click_down )
             }
         } )
-        this.mood.renderer.canvas.addEventListener( "click", async () => {
-            if( ! document.pointerLockElement ){ await this.mood.renderer.canvas.requestPointerLock( { unadjustedMovement: true } ) }
+        this.woop.renderer.canvas.addEventListener( "click", async () => {
+            if( ! document.pointerLockElement ){ await this.woop.renderer.canvas.requestPointerLock( { unadjustedMovement: true } ) }
         }, false )
     }
 }

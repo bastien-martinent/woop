@@ -1,9 +1,9 @@
 import {CURSORS} from "./const.js"
-import MoodMath from "./MoodMath.js"
+import WoopMath from "./WoopMath.js"
 
 export default class Renderer{
-    constructor( mood, canvas, render_mode = '2D', field_of_view= 90, pixel_scale = 8 ){
-        this.mood                = mood
+    constructor( woop, canvas, render_mode = '2D', field_of_view= 90, pixel_scale = 8 ){
+        this.woop                = woop
         this.canvas              = canvas
         this.render_mode         = render_mode
         this.horisontal_fov      = field_of_view
@@ -58,10 +58,10 @@ export default class Renderer{
         this.demi_internal_height = this.internal_height / 2
         this.aspect_ratio         = this.internal_width / this.internal_height
         this.vertical_fov         = this.demi_horisontal_fov / this.aspect_ratio
-        this.screen_distance      = this.demi_internal_height / Math.tan( MoodMath.degrees_to_radians( this.vertical_fov  ) )
+        this.screen_distance      = this.demi_internal_height / Math.tan( WoopMath.degrees_to_radians( this.vertical_fov  ) )
         this.screen_range         = [ 1 ]
 
-        MoodMath.init( this )
+        WoopMath.init( this )
     }
 
     //TODO create a range object
@@ -113,20 +113,20 @@ export default class Renderer{
     add_color( color_name, r, g, b ){
         if( typeof this.colors[ color_name ] === "undefined" ) {
             this.colors[color_name] = [
-                MoodMath.value_range( r, 0, 255 ),
-                MoodMath.value_range( g, 0, 255 ),
-                MoodMath.value_range( b, 0, 255 ),
+                WoopMath.value_range( r, 0, 255 ),
+                WoopMath.value_range( g, 0, 255 ),
+                WoopMath.value_range( b, 0, 255 ),
             ]
         }
     }
     get_color( color, alpha = 1 , has_css = false ){
-        let a = MoodMath.value_range( alpha, 0, 1 )
+        let a = WoopMath.value_range( alpha, 0, 1 )
         if( typeof this.colors[ color ] === "undefined" ) {
             this.add_color(
                 color,
-                MoodMath.random_int_range( 100, 255 ),
-                MoodMath.random_int_range( 100, 255 ),
-                MoodMath.random_int_range( 100, 255 )
+                WoopMath.random_int_range( 100, 255 ),
+                WoopMath.random_int_range( 100, 255 ),
+                WoopMath.random_int_range( 100, 255 )
             )
         }
         let c = this.colors[ color ]
@@ -169,7 +169,7 @@ export default class Renderer{
     draw_editor_grid = () => {
         this.draw( 'editor_grid', [] )
     }
-    draw_editor_player = ( player = this.mood.player, color = "red" ) => {
+    draw_editor_player = ( player = this.woop.player, color = "red" ) => {
         this.draw( 'editor_player', [ player, color ] )
     }
     draw_editor_bound_box = ( bound_box ) => {
@@ -178,10 +178,10 @@ export default class Renderer{
     draw_editor_sub_sector = ( sub_sector ) => {
         this.draw( 'editor_sub_sector', [ sub_sector ] )
     }
-    draw_bsp_nodes = ( bsp_node = this.mood.level.bsp_tree.root ) => {
+    draw_bsp_nodes = ( bsp_node = this.woop.level.bsp_tree.root ) => {
         this.draw( 'editor_bsp_nodes', [ bsp_node ] )
     }
-    draw_editor_sector_in_field_of_view = ( bsp_tree = this.mood.level.bsp_tree ) => {
+    draw_editor_sector_in_field_of_view = ( bsp_tree = this.woop.level.bsp_tree ) => {
         this.draw( 'editor_sector_in_field_of_view', [ bsp_tree ] )
     }
 
@@ -198,7 +198,7 @@ export default class Renderer{
     draw_game_edge = ( segment, angle_start, x_star, x_end, color = "white", alpha = 1 ) => {
         this.draw( 'game_edge', [ segment, angle_start, x_star, x_end, color, alpha ] )
     }
-    draw_game_sector_in_field_of_view = ( bsp_tree = this.mood.level.bsp_tree ) => {
+    draw_game_sector_in_field_of_view = ( bsp_tree = this.woop.level.bsp_tree ) => {
         this.draw( 'game_sector_in_field_of_view', [ bsp_tree ] )
     }
     draw_game_sub_sector = ( sub_sector ) => {

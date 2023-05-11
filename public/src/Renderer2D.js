@@ -1,11 +1,11 @@
 import {CURSORS} from "./const.js"
-import MoodMath from "./MoodMath.js"
+import WoopMath from "./WoopMath.js"
 import Renderer from "./Renderer.js"
 
 export default class Renderer2D extends Renderer{
 
-    constructor( mood, canvas, field_of_view= 90, pixel_scale = 8 ) {
-        super( mood, canvas, '2D', field_of_view, pixel_scale )
+    constructor( woop, canvas, field_of_view= 90, pixel_scale = 8 ) {
+        super( woop, canvas, '2D', field_of_view, pixel_scale )
     }
 
     //common function
@@ -43,7 +43,7 @@ export default class Renderer2D extends Renderer{
         this.context.fillStyle   = this.get_color( fill_color, fill_alpha, true )
         this.context.lineWidth   = stroke_size
         this.context.beginPath()
-        this.context.arc( x * grid_scale - offset_x , y * -1 * grid_scale - offset_y, radius, 0, MoodMath.pi2 )
+        this.context.arc( x * grid_scale - offset_x , y * -1 * grid_scale - offset_y, radius, 0, WoopMath.pi2 )
         this.context.stroke()
         this.context.fill()
     }
@@ -82,14 +82,14 @@ export default class Renderer2D extends Renderer{
         let offset_x               = this.get_from_data_sets( "editor", "pixel_x_offset" )
         let offset_y               = this.get_from_data_sets( "editor", "pixel_y_offset" )
         let grid_scale             = this.get_from_data_sets( "editor", "grid_scale" )
-        let player_position_x      = this.mood.player.position.x * grid_scale - offset_x
-        let player_position_y      = this.mood.player.position.y * -1 * grid_scale - offset_y
-        let player_horizontal_angle = MoodMath.angle_range( ( this.mood.player.horizontal_angle * -1 ) )
-        let fov_line_1             = MoodMath.angle_range( ( this.mood.player.horizontal_angle * -1 ) + ( this.horisontal_fov / 2 ) )
-        let fov_line_2             = MoodMath.angle_range( ( this.mood.player.horizontal_angle * -1 ) - ( this.horisontal_fov / 2 ) )
+        let player_position_x      = this.woop.player.position.x * grid_scale - offset_x
+        let player_position_y      = this.woop.player.position.y * -1 * grid_scale - offset_y
+        let player_horizontal_angle = WoopMath.angle_range( ( this.woop.player.horizontal_angle * -1 ) )
+        let fov_line_1             = WoopMath.angle_range( ( this.woop.player.horizontal_angle * -1 ) + ( this.horisontal_fov / 2 ) )
+        let fov_line_2             = WoopMath.angle_range( ( this.woop.player.horizontal_angle * -1 ) - ( this.horisontal_fov / 2 ) )
 
         //player position
-        this.draw_editor_point_2D( this.mood.player.position.x, this.mood.player.position.y, color, 1, color, .5, 4, 1 )
+        this.draw_editor_point_2D( this.woop.player.position.x, this.woop.player.position.y, color, 1, color, .5, 4, 1 )
 
         //direction line
         this.context.beginPath()
@@ -97,12 +97,12 @@ export default class Renderer2D extends Renderer{
         this.context.strokeStyle = this.get_color( color, 1, true )
         this.context.fillStyle   = this.get_color( color, .5, true )
         this.context.moveTo(
-            Math.round( player_position_x + 4 * MoodMath.lookup_cos( player_horizontal_angle ) ),
-            Math.round( player_position_y + 4 * MoodMath.lookup_sin( player_horizontal_angle ) )
+            Math.round( player_position_x + 4 * WoopMath.lookup_cos( player_horizontal_angle ) ),
+            Math.round( player_position_y + 4 * WoopMath.lookup_sin( player_horizontal_angle ) )
         )
         this.context.lineTo(
-            Math.round( player_position_x + 20 * MoodMath.lookup_cos( player_horizontal_angle ) ),
-            Math.round( player_position_y + 20 * MoodMath.lookup_sin( player_horizontal_angle ) )
+            Math.round( player_position_x + 20 * WoopMath.lookup_cos( player_horizontal_angle ) ),
+            Math.round( player_position_y + 20 * WoopMath.lookup_sin( player_horizontal_angle ) )
         )
         this.context.stroke()
 
@@ -112,12 +112,12 @@ export default class Renderer2D extends Renderer{
         this.context.fillStyle   = this.get_color( "green", .5, true )
         this.context.beginPath()
         this.context.moveTo(
-            Math.round( player_position_x + 4 * MoodMath.lookup_cos( fov_line_1 ) ),
-            Math.round( player_position_y + 4 * MoodMath.lookup_sin( fov_line_1 ) )
+            Math.round( player_position_x + 4 * WoopMath.lookup_cos( fov_line_1 ) ),
+            Math.round( player_position_y + 4 * WoopMath.lookup_sin( fov_line_1 ) )
         )
         this.context.lineTo(
-            Math.round( player_position_x + 500 * MoodMath.lookup_cos( fov_line_1 ) ),
-            Math.round( player_position_y + 500 * MoodMath.lookup_sin( fov_line_1 ) )
+            Math.round( player_position_x + 500 * WoopMath.lookup_cos( fov_line_1 ) ),
+            Math.round( player_position_y + 500 * WoopMath.lookup_sin( fov_line_1 ) )
         )
         this.context.stroke()
 
@@ -125,12 +125,12 @@ export default class Renderer2D extends Renderer{
         this.context.strokeStyle = this.get_color("green", 1, true )
         this.context.fillStyle   = this.get_color( "green", .5, true )
         this.context.moveTo(
-            Math.round( player_position_x + 4 * MoodMath.lookup_cos( fov_line_2 ) ),
-            Math.round( player_position_y + 4 * MoodMath.lookup_sin( fov_line_2 ) )
+            Math.round( player_position_x + 4 * WoopMath.lookup_cos( fov_line_2 ) ),
+            Math.round( player_position_y + 4 * WoopMath.lookup_sin( fov_line_2 ) )
         )
         this.context.lineTo(
-            Math.round( player_position_x + 500 * MoodMath.lookup_cos( fov_line_2 ) ),
-            Math.round( player_position_y + 500 * MoodMath.lookup_sin( fov_line_2 ) )
+            Math.round( player_position_x + 500 * WoopMath.lookup_cos( fov_line_2 ) ),
+            Math.round( player_position_y + 500 * WoopMath.lookup_sin( fov_line_2 ) )
         )
         this.context.stroke()
     }
@@ -139,14 +139,14 @@ export default class Renderer2D extends Renderer{
         let offset_y   = this.get_from_data_sets( "editor", "pixel_y_offset" )
         let grid_scale = this.get_from_data_sets( "editor", "grid_scale" )
 
-        let screen_step_x       = Math.ceil( this.canvas.width / this.mood.editor.ceil_pixel_size() )
-        let screen_step_y       = Math.ceil( this.canvas.height / this.mood.editor.ceil_pixel_size() )
-        let pos_x_offset        = this.mood.editor.grid_pos.x
-        let pos_y_offset        = this.mood.editor.grid_pos.y * -1
-        let pixel_grid_x_offset = offset_x % this.mood.editor.ceil_pixel_size()
-        let pixel_grid_y_offset = offset_y % this.mood.editor.ceil_pixel_size()
-        let ceil_x_offset       = Math.floor( pos_x_offset / this.mood.editor.unit_by_ceil )
-        let ceil_y_offset       = Math.floor( pos_y_offset / this.mood.editor.unit_by_ceil ) * -1
+        let screen_step_x       = Math.ceil( this.canvas.width / this.woop.editor.ceil_pixel_size() )
+        let screen_step_y       = Math.ceil( this.canvas.height / this.woop.editor.ceil_pixel_size() )
+        let pos_x_offset        = this.woop.editor.grid_pos.x
+        let pos_y_offset        = this.woop.editor.grid_pos.y * -1
+        let pixel_grid_x_offset = offset_x % this.woop.editor.ceil_pixel_size()
+        let pixel_grid_y_offset = offset_y % this.woop.editor.ceil_pixel_size()
+        let ceil_x_offset       = Math.floor( pos_x_offset / this.woop.editor.unit_by_ceil )
+        let ceil_y_offset       = Math.floor( pos_y_offset / this.woop.editor.unit_by_ceil ) * -1
         let zero_lines          = []
 
         this.context.beginPath()
@@ -157,30 +157,30 @@ export default class Renderer2D extends Renderer{
         this.context.fillText( "x", 30 , 20 )
         this.context.fillText( "y", 20 , 30 )
         for( let x = 0; x <= screen_step_x; x++ ){
-            if( x > 1 ){ this.context.fillText( ( x + ceil_x_offset ) * this.mood.editor.unit_by_ceil, x * this.mood.editor.ceil_pixel_size() - pixel_grid_x_offset, 20 ) }
-            if( 0 !== Math.ceil( ( x + ceil_x_offset ) * this.mood.editor.unit_by_ceil ) ){
-                this.context.moveTo( x * this.mood.editor.ceil_pixel_size() - pixel_grid_x_offset, 0 )
-                this.context.lineTo( x * this.mood.editor.ceil_pixel_size() - pixel_grid_x_offset, this.canvas.height )
+            if( x > 1 ){ this.context.fillText( ( x + ceil_x_offset ) * this.woop.editor.unit_by_ceil, x * this.woop.editor.ceil_pixel_size() - pixel_grid_x_offset, 20 ) }
+            if( 0 !== Math.ceil( ( x + ceil_x_offset ) * this.woop.editor.unit_by_ceil ) ){
+                this.context.moveTo( x * this.woop.editor.ceil_pixel_size() - pixel_grid_x_offset, 0 )
+                this.context.lineTo( x * this.woop.editor.ceil_pixel_size() - pixel_grid_x_offset, this.canvas.height )
             }else{
                 zero_lines.push( [
-                    x * this.mood.editor.ceil_pixel_size() - pixel_grid_x_offset,
+                    x * this.woop.editor.ceil_pixel_size() - pixel_grid_x_offset,
                     0,
-                    x * this.mood.editor.ceil_pixel_size() - pixel_grid_x_offset,
+                    x * this.woop.editor.ceil_pixel_size() - pixel_grid_x_offset,
                     this.canvas.height
                 ] )
             }
         }
         for( let y = 0; y <= screen_step_y; y++ ){
-            if( y > 1 ){ this.context.fillText( ( y * -1 + ceil_y_offset ) * this.mood.editor.unit_by_ceil, 20, y * this.mood.editor.ceil_pixel_size() - pixel_grid_y_offset ) }
-            if( 0 !== Math.ceil( (  y * -1 + ceil_y_offset ) * this.mood.editor.unit_by_ceil ) ){
-                this.context.moveTo( 0,                  y * this.mood.editor.ceil_pixel_size() - pixel_grid_y_offset )
-                this.context.lineTo( this.canvas.width, y * this.mood.editor.ceil_pixel_size() - pixel_grid_y_offset )
+            if( y > 1 ){ this.context.fillText( ( y * -1 + ceil_y_offset ) * this.woop.editor.unit_by_ceil, 20, y * this.woop.editor.ceil_pixel_size() - pixel_grid_y_offset ) }
+            if( 0 !== Math.ceil( (  y * -1 + ceil_y_offset ) * this.woop.editor.unit_by_ceil ) ){
+                this.context.moveTo( 0,                  y * this.woop.editor.ceil_pixel_size() - pixel_grid_y_offset )
+                this.context.lineTo( this.canvas.width, y * this.woop.editor.ceil_pixel_size() - pixel_grid_y_offset )
             }else{
                 zero_lines.push( [
                     0,
-                    y * this.mood.editor.ceil_pixel_size() - pixel_grid_y_offset,
+                    y * this.woop.editor.ceil_pixel_size() - pixel_grid_y_offset,
                     this.canvas.width,
-                    y * this.mood.editor.ceil_pixel_size() - pixel_grid_y_offset
+                    y * this.woop.editor.ceil_pixel_size() - pixel_grid_y_offset
                 ] )
             }
         }
@@ -198,7 +198,7 @@ export default class Renderer2D extends Renderer{
         }
     }
     draw_editor_sector_in_field_of_view_2D = ( bsp_tree ) => {
-        bsp_tree.render_nodes( this.mood.player, this.draw_editor_sub_sector_2D )
+        bsp_tree.render_nodes( this.woop.player, this.draw_editor_sub_sector_2D )
     }
     draw_bsp_node_2D = ( bsp_node ) => {
         this.draw_editor_box_2D(
@@ -243,24 +243,24 @@ export default class Renderer2D extends Renderer{
     draw_editor_sub_sector_2D = ( sub_sector ) => {
         for( let i = 0; i < sub_sector.segments.length; i++ ){
             //seg are not facing player
-            let angle_start = MoodMath.point_to_angle( this.mood.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
-            let angle_end   = MoodMath.point_to_angle( this.mood.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
-            let angle_span  = MoodMath.angle_range( angle_start - angle_end, 0, 360, true, false )
+            let angle_start = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
+            let angle_end   = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
+            let angle_span  = WoopMath.angle_range( angle_start - angle_end, 0, 360, true, false )
             if( angle_span > 180 ){ continue }
 
-            let x1_angle = angle_start - this.mood.player.horizontal_angle
-            let angle_start_span = MoodMath.angle_range( x1_angle + this.mood.renderer.demi_horisontal_fov, 0, 360, true, false )
-            if( angle_start_span > angle_span + this.mood.renderer.horisontal_fov ){ continue }
+            let x1_angle = angle_start - this.woop.player.horizontal_angle
+            let angle_start_span = WoopMath.angle_range( x1_angle + this.woop.renderer.demi_horisontal_fov, 0, 360, true, false )
+            if( angle_start_span > angle_span + this.woop.renderer.horisontal_fov ){ continue }
 
-            let x2_angle = angle_end - this.mood.player.horizontal_angle
-            let angle_end_span = MoodMath.angle_range( this.mood.renderer.demi_horisontal_fov - x2_angle, 0, 360, true, false )
-            if( angle_end_span > angle_span + this.mood.renderer.horisontal_fov ){ continue }
+            let x2_angle = angle_end - this.woop.player.horizontal_angle
+            let angle_end_span = WoopMath.angle_range( this.woop.renderer.demi_horisontal_fov - x2_angle, 0, 360, true, false )
+            if( angle_end_span > angle_span + this.woop.renderer.horisontal_fov ){ continue }
 
             this.add_color(
                 sub_sector.id,
-                MoodMath.random_int_range( 100, 255 ),
-                MoodMath.random_int_range( 100, 255 ),
-                MoodMath.random_int_range( 100, 255 )
+                WoopMath.random_int_range( 100, 255 ),
+                WoopMath.random_int_range( 100, 255 ),
+                WoopMath.random_int_range( 100, 255 )
             )
             this.draw_editor_line(
                 sub_sector.segments[ i ].edge.vertices[ 0 ].x,
@@ -317,8 +317,8 @@ export default class Renderer2D extends Renderer{
         let floor_light     = sector.floor.texture
         let celling_light   = sector.celling.texture
 
-        let relative_floor_height   = sector.floor.height - this.mood.player.position.z
-        let relative_celling_height = sector.celling.height - this.mood.player.position.z
+        let relative_floor_height   = sector.floor.height - this.woop.player.position.z
+        let relative_celling_height = sector.celling.height - this.woop.player.position.z
 
         let edge_is_draw    = ( wall_texture !== false )
         let floor_is_draw   = ( relative_floor_height < 0 )
@@ -326,17 +326,17 @@ export default class Renderer2D extends Renderer{
 
         let edge_normal  = edge.angle + 90
         let offset_angle = edge_normal - angle_start
-        let hypotenuse   = MoodMath.distance( this.mood.player.position, edge.vertices[ 0 ] )
-        let distance     = hypotenuse * Math.cos( MoodMath.degrees_to_radians( offset_angle ) )
+        let hypotenuse   = WoopMath.distance( this.woop.player.position, edge.vertices[ 0 ] )
+        let distance     = hypotenuse * Math.cos( WoopMath.degrees_to_radians( offset_angle ) )
 
-        let scale_start  = MoodMath.scale(
+        let scale_start  = WoopMath.scale(
             x_start, edge_normal, distance,
-            this.screen_distance, this.mood.player.horizontal_angle
+            this.screen_distance, this.woop.player.horizontal_angle
         )
 
         let scale_step = 0
         if( x_start < x_end ){
-            let scale_end = MoodMath.scale( x_end, edge_normal, distance, this.screen_distance, this.mood.player.horizontal_angle )
+            let scale_end = WoopMath.scale( x_end, edge_normal, distance, this.screen_distance, this.woop.player.horizontal_angle )
             scale_step = ( scale_end - scale_start ) / ( x_end - x_start )
         }
 
@@ -368,31 +368,31 @@ export default class Renderer2D extends Renderer{
 
     draw_game_sector_in_field_of_view_2D = ( bsp_tree ) => {
         this.init_screen_range()
-        bsp_tree.render_nodes( this.mood.player, this.draw_game_sub_sector_2D, this.range_is_full )
+        bsp_tree.render_nodes( this.woop.player, this.draw_game_sub_sector_2D, this.range_is_full )
     }
     draw_game_sub_sector_2D = ( sub_sector ) => {
         for( let i = 0; i < sub_sector.segments.length && this.range_has_empty_space(); i++ ){
             //seg are not facing player
-            let angle_start = MoodMath.point_to_angle( this.mood.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
-            let angle_end   = MoodMath.point_to_angle( this.mood.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
-            let angle_span  = MoodMath.angle_range( angle_start - angle_end, 0, 360, true, false )
+            let angle_start = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
+            let angle_end   = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
+            let angle_span  = WoopMath.angle_range( angle_start - angle_end, 0, 360, true, false )
             if( angle_span > 180 ){ continue }
 
             //seg are not in field of view
-            let x1_angle = angle_start - this.mood.player.horizontal_angle
-            let angle_start_span = MoodMath.angle_range( x1_angle + this.mood.renderer.demi_horisontal_fov, 0, 360, true, false )
-            if( angle_start_span >= angle_span + this.mood.renderer.horisontal_fov ){ continue }
+            let x1_angle = angle_start - this.woop.player.horizontal_angle
+            let angle_start_span = WoopMath.angle_range( x1_angle + this.woop.renderer.demi_horisontal_fov, 0, 360, true, false )
+            if( angle_start_span >= angle_span + this.woop.renderer.horisontal_fov ){ continue }
 
-            let x2_angle = angle_end - this.mood.player.horizontal_angle
-            let angle_end_span = MoodMath.angle_range( this.mood.renderer.demi_horisontal_fov - x2_angle, 0, 360, true, false )
-            if( angle_end_span >= angle_span + this.mood.renderer.horisontal_fov ){ continue }
+            let x2_angle = angle_end - this.woop.player.horizontal_angle
+            let angle_end_span = WoopMath.angle_range( this.woop.renderer.demi_horisontal_fov - x2_angle, 0, 360, true, false )
+            if( angle_end_span >= angle_span + this.woop.renderer.horisontal_fov ){ continue }
 
-            let x1 = MoodMath.value_range(
-                MoodMath.angle_to_screen_x( x1_angle, this.screen_distance, this.demi_internal_width ),
+            let x1 = WoopMath.value_range(
+                WoopMath.angle_to_screen_x( x1_angle, this.screen_distance, this.demi_internal_width ),
                 0, this.screen_range.length
             )
-            let x2 = MoodMath.value_range(
-                MoodMath.angle_to_screen_x( x2_angle, this.screen_distance, this.demi_internal_width ),
+            let x2 = WoopMath.value_range(
+                WoopMath.angle_to_screen_x( x2_angle, this.screen_distance, this.demi_internal_width ),
                 0, this.screen_range.length
             )
             if( sub_sector.segments[ i ].edge.right === false ){
