@@ -120,6 +120,7 @@ export default class WadData {
             edges[ this.segs[ i ][ 3 ] ].set_direction( this.segs[ i ][ 4 ] )
             edges[ this.segs[ i ][ 3 ] ].set_angle( WoopMath.binary_angle_to_degree( this.segs[ i ][ 2 ] ), )
             this.cache.segs.push( new Segment(
+                i,
                 vertices[ this.segs[ i ][ 0 ] ],
                 vertices[ this.segs[ i ][ 1 ] ],
                 WoopMath.binary_angle_to_degree( this.segs[ i ][ 2 ] ),
@@ -148,23 +149,26 @@ export default class WadData {
         let sidedefs     = this.get_sidedefs()
         this.cache.linedefs = []
         for( let i = 0; i < this.linedefs.length; i++ ){
+            let right = ( this.linedefs[ i ][ 5 ] !== -1 ) ? sidedefs[ this.linedefs[ i ][ 5 ] ] : false
+            let left  = ( this.linedefs[ i ][ 6 ] !== -1 ) ? sidedefs[ this.linedefs[ i ][ 6 ] ] : false
+            let attributes = {
+                doom_fag          : this.linedefs[i][2],
+                doom_special_type : this.linedefs[i][3],
+                doom_sector_tag   : this.linedefs[i][4],
+                is_solid          : ( right && left ),
+                is_portal         : ! ( right && left ),
+                //TODO detect trigger line
+            }
             this.cache.linedefs.push( new Edge(
                 vertices[ this.linedefs[ i ][ 0 ] ],
                 vertices[ this.linedefs[ i ][ 1 ] ],
-                1,
                 0,
-                ( this.linedefs[ i ][ 5 ] !== -1 )
-                    ? sidedefs[ this.linedefs[ i ][ 5 ] ] : false,
-                ( this.linedefs[ i ][ 6 ] !== -1 )
-                        ? sidedefs[ this.linedefs[ i ][ 5 ] ] : false,
+                0,
+                right,
+                left,
                 sidedefs[ this.linedefs[ i ][ 5 ] ],
                 sidedefs[ this.linedefs[ i ][ 6 ] ],
-                {
-                    doom_fag          : this.linedefs[i][2],
-                    doom_special_type : this.linedefs[i][3],
-                    doom_sector_tag   : this.linedefs[i][4],
-
-                }
+                attributes
             ) )
         }
         return this.cache.linedefs
@@ -196,6 +200,7 @@ export default class WadData {
         this.cache.sectors = []
         for( let i = 0; i < this.sectors.length; i++ ){
             this.cache.sectors.push( new Sector(
+                i,
                 this.sectors[ i ][ 1 ],
                 this.sectors[ i ][ 0 ],
                 ( this.sectors[ i ][ 3 ] !== "-" ) ? this.sectors[ i ][ 3 ] : false,

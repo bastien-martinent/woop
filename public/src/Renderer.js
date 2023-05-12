@@ -1,15 +1,16 @@
 import {CURSORS} from "./const.js"
 import WoopMath from "./WoopMath.js"
+import ScreenSpace from "./ScreenSpace.js"
 
 export default class Renderer{
-    constructor( woop, canvas, render_mode = '2D', field_of_view= 90, pixel_scale = 8 ){
+    constructor( woop, canvas, render_mode, field_of_view, pixel_scale ){
         this.woop                = woop
         this.canvas              = canvas
         this.render_mode         = render_mode
-        this.horisontal_fov      = field_of_view
-        this.demi_horisontal_fov = field_of_view / 2
+        this.fov                 = field_of_view
         this.pixel_scale         = pixel_scale
         this.data_sets           = {}
+        this.screen_space        = null
         this.colors              = {
             "black"         : [ 33, 33, 33 ],
             "blacker black" : [ 0, 0, 0 ],
@@ -56,40 +57,19 @@ export default class Renderer{
         this.internal_height      = Math.round( this.canvas.height / this.pixel_scale )
         this.demi_internal_width  = this.internal_width / 2
         this.demi_internal_height = this.internal_height / 2
-        this.aspect_ratio         = this.internal_width / this.internal_height
-        this.vertical_fov         = this.demi_horisontal_fov / this.aspect_ratio
-        this.screen_distance      = this.demi_internal_height / Math.tan( WoopMath.degrees_to_radians( this.vertical_fov  ) )
-        this.screen_range         = [ 1 ]
-
+        this.horisontal_fov       =  this.fov
+        this.demi_horisontal_fov  = this.horisontal_fov / 2
+        /* maybe you can find a way to adjust fov from desired fov and screen aspect ratio
+            FOV_Horizontal = 2 * atan(W/2/f) = 2 * atan2(W/2, f)  radians
+            FOV_Vertical   = 2 * atan(H/2/f) = 2 * atan2(H/2, f)  radians
+            FOV_Diagonal   = 2 * atan2(sqrt(W^2 + H^2)/2, f)    radians
+            this.aspect_ratio = this.internal_width / this.internal_height
+            this.vertical_fov = WoopMath.degrees_to_radians( 2 * Math.atan2( this.demi_internal_height, this.fov ) )
+            this.vertical_fov = this.vertical_fov / 2
+        */
+        this.screen_distance      = this.demi_internal_width / Math.tan( WoopMath.degrees_to_radians( this.demi_horisontal_fov ) )
+        this.screen_space         = new ScreenSpace( this.internal_width, this.internal_height )
         WoopMath.init( this )
-    }
-
-    //TODO create a range object
-    init_screen_range = () => {
-        this.screen_range = Array( this.internal_width -1 ).fill( 0 )
-    }
-    range_is_full = ( range = this.screen_range ) => {
-        return ! range.includes( 0 )
-    }
-    range_is_empty = ( range = this.screen_range ) => {
-        return ! range.includes( 1 )
-    }
-    range_has_empty_space = ( range = this.screen_range ) => {
-        return range.includes( 0 )
-    }
-    range_get_empty_space = ( index, max = null, range = this.screen_range ) => {
-        if( index < 0 || index > range.length ){ return 0 }
-        if( max === null ){ max = range.length - 1 }
-        while( range[ index ] === 0 && index <= max  && index < range.length ){ index++ }
-        return index
-    }
-
-    set_screen_range = ( from, to = null ) => {
-        if( to === null ){
-            this.screen_range[ from ] = 1
-            return
-        }
-        for( let i = from; i <= to; i++ ){ this.screen_range[ i ] = 1 }
     }
 
     //useful dataset from editor or game
@@ -150,7 +130,7 @@ export default class Renderer{
         this.draw( 'background', [ color ] )
     }
     draw_text = ( x, y, text, color = "white", size = 6 ) => {
-        this.draw( 'background', [ x, y, text, color, size ] )
+        this.draw( 'text', [ x, y, text, color, size ] )
     }
     draw_cursor = ( x, y, cursor = CURSORS.ARROW, color = "white", alpha = 1 ) => {
         this.draw( 'cursor', [ x, y, cursor, color, alpha ] )
@@ -189,14 +169,14 @@ export default class Renderer{
     draw_game_pixel = ( x, y, color = "white", alpha = 1 ) => {
         this.draw( 'game_pixel', [ x, y, color, alpha] )
     }
-    draw_game_line = ( start_x, start_y, end_x, end_y, color =  "white", alpha = 1 ) => {
-        this.draw( 'game_line', [ start_x, start_y, end_x, end_y, color, alpha ] )
+    draw_game_line = ( start_x, start_y, end_x, end_y, texture, light ) => {
+        this.draw( 'game_line', [ start_x, start_y, end_x, end_y, texture, light ] )
     }
-    draw_game_vertical_line = (x, start_y, end_y, color = "white", alpha = 1  ) => {
-        this.draw( 'game_vertical_line', [ x, start_y, end_y, color, alpha ] )
+    draw_game_vertical_line = (x, start_y, end_y, texture = 'default', light = 50  ) => {
+        this.draw( 'game_vertical_line', [ x, start_y, end_y, texture, light ] )
     }
-    draw_game_edge = ( segment, angle_start, x_star, x_end, color = "white", alpha = 1 ) => {
-        this.draw( 'game_edge', [ segment, angle_start, x_star, x_end, color, alpha ] )
+    draw_game_edge = ( segment, angle_start, x_star, x_end, range_x_star, range_x_end ) => {
+        this.draw( 'game_edge', [ segment, angle_start, x_star, x_end, range_x_star, range_x_end ] )
     }
     draw_game_sector_in_field_of_view = ( bsp_tree = this.woop.level.bsp_tree ) => {
         this.draw( 'game_sector_in_field_of_view', [ bsp_tree ] )

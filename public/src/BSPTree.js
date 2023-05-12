@@ -109,7 +109,8 @@ export class SubSector{
     }
 }
 export class Segment{
-    constructor( vertex_start, vertex_end, angle, offset, edge ){
+    constructor( id, vertex_start, vertex_end, angle, offset, edge ){
+        this.id       = id
         this.vertices = [ vertex_start, vertex_end ]
         this.angle    = angle
         this.offset   = offset
@@ -125,15 +126,13 @@ export class Edge {
         this.left       = left
         this.attributes = attributes
     }
-    set_direction( direction ){
+    set_direction = ( direction ) => {
         if( this.direction !== direction && [ 0,1 ].includes( direction ) ){
             this.direction = direction
-            let swap       = this.right
-            this.right     = this.left
-            this.left      = swap
+            this.right = [this.left, this.left = this.right][0]
         }
     }
-    set_angle( angle ){
+    set_angle = ( angle ) => {
         this.angle = WoopMath.angle_range( angle, 0, 360, true, false )
     }
 }
@@ -151,7 +150,8 @@ export class EdgeSide {
     }
 }
 export class Sector {
-    constructor( ceiling_height, floor_height, ceiling_textures, floor_texture, ceiling_light, floor_light, ){
+    constructor( id, ceiling_height, floor_height, ceiling_textures, floor_texture, ceiling_light, floor_light, ){
+        this.id = id
         this.celling = {
             height  : ceiling_height,
             texture : ceiling_textures,

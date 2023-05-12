@@ -1,41 +1,40 @@
 import { GAME_STATES } from "./const.js"
-import WadLoader from "./WadLoader.js"
-import Level from "./Level.js"
-import Game from "./Game.js"
-import Editor from "./Editor.js"
-import Debugger from "./Debugger.js"
-import Renderer2D from "./Renderer2D.js"
-import InputManager from "./InputManager.js"
+import WadLoader       from "./WadLoader.js"
+import Level           from "./Level.js"
+import Renderer2D      from "./Renderer2D.js"
+import Game            from "./Game.js"
+import Editor          from "./Editor.js"
+import Debugger        from "./Debugger.js"
+import InputManager    from "./InputManager.js"
 
 export default class Woop{
     constructor( canvas, options = {} ){
         let render_mode   = ( options.render !== undefined ) ? options.render : '2D'
         let pixel_scale   = ( options.scale !== undefined ) ? options.scale : 4
         let field_of_view = ( options.field_of_view !== undefined ) ? options.field_of_view : 90
+        let frame_rate    = ( options.frame_rate !== undefined ) ? options.frame_rate       : 30
         let debug         = ( options.debug !== undefined ) ? options.debug : false
 
         switch ( render_mode ){
             case '2D' :
             default :
-                this.renderer     = new Renderer2D( this, canvas, field_of_view, pixel_scale )
+                this.renderer     = new Renderer2D( this, canvas, field_of_view, pixel_scale, frame_rate )
         }
 
-        this.game_state   = GAME_STATES.EDITOR
-        this.debbuger     = new Debugger( this, debug )
-        this.wad_loader   = new WadLoader( this,[ './wads/DOOM1.WAD' ] )
+        this.game_state        = GAME_STATES.EDITOR
+        this.debbuger          = new Debugger( this, debug )
+        this.wad_loader        = new WadLoader( this,[ './wads/DOOM1.WAD' ] )
 
-        this.level        = new Level()
+        this.level             = new Level()
         this.level.load_from_wad( this.wad_loader, 'E1M1' )
-        this.player       = this.level.spawn_player()
+        this.player            = this.level.spawn_player()
 
-        this.inputs       = new InputManager( this )
-        this.game         = new Game( this )
-        this.editor       = new Editor( this )
-    }
-    run(){
+        this.inputs            = new InputManager( this )
+        this.game              = new Game( this )
+        this.editor            = new Editor( this )
         this.time = {
+            target_frame_rate : frame_rate,
             execution_start   : window.performance.now(),
-            target_frame_rate : 60,
             unscaledTime      : 0,
             unscaledDeltaTime : 0,
             timeScale         : 1,
@@ -46,6 +45,9 @@ export default class Woop{
             last_frame_count  : 0,
             last_second       : 0,
         }
+    }
+
+    run(){
         this.woop_loop()
     }
 
