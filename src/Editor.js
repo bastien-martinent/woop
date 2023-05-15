@@ -1,5 +1,5 @@
 import Int2DVertex from "./type/Int2DVertex.js"
-import { GAME_STATES, CURSORS } from "./const.js"
+import { CURSORS } from "./const.js"
 import WoopMath from "./WoopMath.js"
 
 export default class Editor{

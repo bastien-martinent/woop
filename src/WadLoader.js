@@ -1,5 +1,5 @@
 import { DOOM } from "./const.js"
-import WadData from "./WadData.js"
+import WadData  from "./WadData.js"
 
 export default class WadLoader {
     constructor( woop, file_paths = [] ){

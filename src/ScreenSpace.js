@@ -49,16 +49,29 @@ export default class ScreenSpace {
         }
     }
 
-    get_empty_horizontal_range = ( x, x_max = this.width -1 ) => {
+    get_empty_horizontal_range = ( x, x_max = this.width -1, direction = 1 ) => {
+        if( ! [ -1, 1 ].includes( direction ) ){
+            console.log( 'get_empty_vertical_range : invalid direction' )
+            return x
+        }
         x     = WoopMath.value_range( x, 0, this.width -1 )
         x_max = WoopMath.value_range( x_max, 0, this.width -1 )
         if( this.vertical_is_full( x ) ){ return 0 }
-        while( x <= x_max && this.vertical_line_has_space( x ) ){ x++ }
+        while( x !== x_max && this.vertical_line_has_space( x ) ){ x = x + direction }
         return x
     }
 
-    get_empty_vertical_range = () => {
-
+    get_empty_vertical_range = ( x, y, y_max, direction = 1 ) => {
+        if( ! [ -1, 1 ].includes( direction ) ){
+            console.log( 'get_empty_vertical_range : invalid direction' )
+            return y
+        }
+        x     = WoopMath.value_range( x, 0, this.width -1 )
+        y     = WoopMath.value_range( y, 0, this.height -1 )
+        y_max = WoopMath.value_range( y_max, 0, this.height -1 )
+        if( this.pixel_is_full( x, y ) ){ return 0 }
+        while( y !== y_max + direction && this.pixel_is_full( x, y ) ){ y = y + direction }
+        return y
     }
 
     has_space = () => {
@@ -72,17 +85,17 @@ export default class ScreenSpace {
         return ! this.has_space()
     }
 
-    horizontal_line_has_space = ( x_start = 0, x_end = this.width -1 ) => {
-        x_start = WoopMath.value_range( x_start, 0, this.width -1 )
-        x_end   = WoopMath.value_range( x_end, 0, this.width -1 )
-        for( let x = x_start; x <= x_end; x++ ){
+    horizontal_line_has_space = ( value_1, value_2 ) => {
+        let start = WoopMath.value_range( Math.min( value_1, value_2 ), 0, this.width -1 )
+        let end   = WoopMath.value_range( Math.min( value_1, value_2 ), 0, this.width -1 )
+        for( let x = start; x <= end; x++ ){
             if( this.screen[ x ][ 0 ] === SCREEN_STATUS.FULL ){ continue }
             return true
         }
         return false
     }
-    horizontal_line_is_full = ( x_start = 0, x_end = this.width -1 ) => {
-        return ! this.horizontal_line_has_space( x_start, x_end )
+    horizontal_line_is_full = ( value_1, value_2 ) => {
+        return ! this.horizontal_line_has_space( value_1, value_2 )
     }
 
     vertical_line_has_space = ( x ) => {

@@ -1,7 +1,11 @@
 import Int2DVertex from "./type/Int2DVertex.js"
 import Int3DVertex from "./type/Int3DVertex.js"
-import { BSPTree, BSPNode, BoundBox, PartitionLine, SubSector, Segment, Edge, EdgeSide, Sector } from "./BSPTree.js"
-import WoopMath from "./WoopMath.js"
+import {
+    BSPTree, BSPNode, BoundBox,
+    PartitionLine, SubSector, Segment,
+    Edge, EdgeSide, Sector
+}                  from "./BSPTree.js"
+import WoopMath    from "./WoopMath.js"
 
 export default class WadData {
     constructor( woop, things, linedefs, sidedef, vertices, segs, ssectors, nodes, sectors, reject, blockmap ){
@@ -166,8 +170,6 @@ export default class WadData {
                 0,
                 right,
                 left,
-                sidedefs[ this.linedefs[ i ][ 5 ] ],
-                sidedefs[ this.linedefs[ i ][ 6 ] ],
                 attributes
             ) )
         }

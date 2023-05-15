@@ -1,6 +1,4 @@
-import {CURSORS} from "./const.js"
-import Int2DVertex from "./type/Int2DVertex.js"
-import WoopMath from "./WoopMath.js";
+import WoopMath from "./WoopMath.js"
 
 export default class Game{
     constructor( woop ) {

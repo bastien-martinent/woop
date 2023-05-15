@@ -1,6 +1,6 @@
-import {CURSORS} from "./const.js"
-import WoopMath from "./WoopMath.js"
-import Renderer from "./Renderer.js"
+import { CURSORS } from "./const.js"
+import WoopMath    from "./WoopMath.js"
+import Renderer    from "./Renderer.js"
 
 export default class Renderer2D extends Renderer{
 
@@ -152,7 +152,7 @@ export default class Renderer2D extends Renderer{
         this.context.strokeStyle = "rgba( 120, 120, 120, 1 )"
         this.context.fillStyle   = "rgba( 255, 255, 255, 1 )"
         this.context.lineWidth   = 1
-        this.context.font        = "6px"
+        this.context.font        = "6px ARIAL"
         this.context.fillText( "x", 30 , 20 )
         this.context.fillText( "y", 20 , 30 )
         for( let x = 0; x <= screen_step_x; x++ ){
@@ -292,6 +292,10 @@ export default class Renderer2D extends Renderer{
     }
 
     draw_game_edge_2D = ( segment, angle_start, x_start, x_end, range_x_star, range_x_end ) => {
+        let debug_segment = [ 292 ]
+
+        let is_solid        = segment.edge.attributes.is_solid
+        //let is_portal       = segment.edge.attributes.is_portal
         let right_edge_side = segment.edge.right
         let left_edge_side  = segment.edge.left
         let right_sector    = right_edge_side.sector
@@ -309,27 +313,58 @@ export default class Renderer2D extends Renderer{
 
         let relative_celling_height = right_sector.celling.height - this.woop.player.position.z
         let relative_floor_height   = right_sector.floor.height - this.woop.player.position.z
-        let relative_upper_height = ( left_sector )
+        let relative_upper_height   = ( left_sector )
             ? left_sector.celling.height - this.woop.player.position.z : relative_celling_height
-        let relative_low_height = ( left_sector )
+        let relative_low_height     = ( left_sector )
             ? left_sector.floor.height - this.woop.player.position.z  : relative_floor_height
 
-        if( relative_upper_height > relative_celling_height ){
+        if( is_solid
+            || relative_celling_height === relative_upper_height
+            || relative_celling_height >= 0
+        ){
+            upper_texture = false
+        }else if( relative_celling_height > relative_upper_height ){
             relative_upper_height = [ relative_celling_height, relative_celling_height = relative_upper_height ][0]
             upper_texture         = left_edge_side.textures.upper
-            //celling_texture       = left_sector.celling.texture
         }
-        if( relative_low_height < relative_floor_height ){
+
+
+        if( is_solid
+            || relative_floor_height === relative_low_height
+            || relative_floor_height <= 0
+        ){
+            lower_texture = false
+        }
+        /*
+        else if( relative_floor_height < relative_low_height ){
             relative_low_height = [ relative_floor_height, relative_floor_height = relative_low_height ][0]
             lower_texture       = left_edge_side.textures.low
-            //floor_texture       = left_sector.floor.texture
         }
+        */
 
         let upper_edge_is_draw  = ( upper_texture !== false )
         let middle_edge_is_draw = ( middle_texture !== false )
         let lower_edge_is_draw  = ( lower_texture !== false )
         let celling_is_draw     = ( celling_texture !== false )
         let floor_is_draw       = ( floor_texture !== false )
+
+        if( ! upper_edge_is_draw
+            && ! middle_edge_is_draw
+            && ! lower_edge_is_draw
+            && ! celling_is_draw
+            && ! floor_is_draw
+        ){
+            return
+        }
+
+        if( debug_segment.includes( segment.id ) ){
+            console.log(
+                {
+                    is_solid,
+                    display : { upper_edge_is_draw, middle_edge_is_draw, lower_edge_is_draw, celling_is_draw, floor_is_draw }
+                }
+            )
+        }
 
         let edge_normal  = segment.edge.angle + 90
         let offset_angle = edge_normal - angle_start
@@ -356,29 +391,34 @@ export default class Renderer2D extends Renderer{
             let low_y     = edge_low_y + edge_low_step * ( x - x_start )
             let floor_y   = edge_floor_y + edge_floor_step * ( x - x_start )
 
-            if( celling_is_draw ){
-                this.draw_game_vertical_line( x, 0, Math.round( celling_y ), celling_texture, celling_light )
-                this.screen_space.fill_vertical_line( x, 0, Math.round( celling_y ) )
+            if( middle_edge_is_draw ){
+                let y1 = ( upper_edge_is_draw ) ? upper_y : celling_y
+                let y2 = ( lower_edge_is_draw && floor_y > low_y  ) ? low_y : floor_y
+                this.draw_game_vertical_line( x, Math.round( y1 ), Math.round( y2 ), middle_texture )
+                this.screen_space.fill_vertical_line( x, Math.round( y1 ), Math.round( y2 ) )
             }
             if( upper_edge_is_draw ){
                 this.draw_game_vertical_line( x, Math.round( celling_y ), Math.round( upper_y ), upper_texture )
                 this.screen_space.fill_vertical_line( x, Math.round( celling_y ), Math.round( upper_y ) )
             }
-            if( middle_edge_is_draw ){
-                let y1 = ( upper_edge_is_draw ) ? upper_y : celling_y
-                let y2 = ( lower_edge_is_draw && floor_y > low_y  ) ? low_y : floor_y
-                this.draw_game_vertical_line( x, Math.round( y1 ), Math.round( y2 ), middle_texture, edge_light )
-                this.screen_space.fill_vertical_line( x, Math.round( y1 ), Math.round( y2 ) )
-            }
             if( lower_edge_is_draw ){
-                this.draw_game_vertical_line( x, Math.round( low_y ), Math.round( floor_y ), lower_texture, edge_light )
+                this.draw_game_vertical_line( x, Math.round( low_y ), Math.round( floor_y ), lower_texture )
                 this.screen_space.fill_vertical_line( x, Math.round( low_y ), Math.round( floor_y ) )
             }
+
+            if( celling_is_draw ){
+                //let y_start = this.screen_space.get_empty_vertical_range( x, Math.round( celling_y ), 0 )
+                //this.draw_game_vertical_line( x, y_start, Math.round( celling_y ), celling_texture )
+                //this.screen_space.fill_vertical_line( x, y_start, Math.round( celling_y ) )
+            }
+
             if( floor_is_draw ){
-                this.draw_game_vertical_line( x, Math.round( floor_y ), this.internal_height -1, floor_texture, floor_light )
+                //this.draw_game_vertical_line( x, Math.round( floor_y ), this.internal_height -1, floor_texture )
                 //this.screen_space.fill_vertical_line( x, Math.round( floor_y ), this.internal_height -1 )
             }
         }
+
+        this.draw_text( x_start * this.pixel_scale, ( edge_upper_y - 20 ) * this.pixel_scale, segment.id.toString(), upper_texture, 18 )
 
     }
 
@@ -413,9 +453,7 @@ export default class Renderer2D extends Renderer{
                 0, this.internal_width -1
             )
 
-            if( x1 > x2 ){
-                //TODO console.log( sub_sector.segments[ i ] )
-            }else if( this.screen_space.horizontal_line_has_space( x1, x2 ) ){
+            if( this.screen_space.horizontal_line_has_space( x1, x2 ) ){
                 for( let x = x1; x <= x2; x++ ){
                     if( this.screen_space.vertical_line_has_space( x ) ){
                         let emptiness_end_at = this.screen_space.get_empty_horizontal_range( x )
