@@ -49,9 +49,8 @@ export default class WadData {
 
     get_player_start(){
         let things = this.get_things()
-        //TODO::find player start sector and update position z value
         return {
-            position         : new Int3DVertex( things[ 0 ].position.x, things[ 0 ].position.y, 45  ),
+            position         : new Int3DVertex( things[ 0 ].position.x, things[ 0 ].position.y, 0  ),
             horizontal_angle : things[ 0 ].angle,
             vertical_angle   : 0
         }
@@ -159,8 +158,8 @@ export default class WadData {
                 doom_fag          : this.linedefs[i][2],
                 doom_special_type : this.linedefs[i][3],
                 doom_sector_tag   : this.linedefs[i][4],
-                is_solid          : ( right && left ),
-                is_portal         : ! ( right && left ),
+                is_solid          : !( right && left ),
+                is_portal         : !!( right && left ),
                 //TODO detect trigger line
             }
             this.cache.linedefs.push( new Edge(

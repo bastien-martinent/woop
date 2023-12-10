@@ -6,6 +6,6 @@ export default class Int3DVertex{
     }
     set_x( x ){ this.x = Math.round( x ) }
     set_y( y ){ this.y = Math.round( y ) }
-    set_z( z ){ this.x = Math.round( z ) }
+    set_z( z ){ this.z = Math.round( z ) }
     //todo get distance from this
 }

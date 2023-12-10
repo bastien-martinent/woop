@@ -77,11 +77,20 @@ export default class Editor{
             this.woop.level.vertices.forEach( ( vertex ) => {
                 renderer.draw_editor_point( vertex.x , vertex.y )
             } )
-            //draw edge
+            //draw edge and edge direction
             this.woop.level.segments.forEach( ( segment ) => {
                 renderer.draw_editor_line( segment.vertices[ 0 ].x, segment.vertices[ 0 ].y, segment.vertices[ 1 ].x, segment.vertices[ 1 ].y )
+                let from = [
+                    Math.round( ( segment.vertices[ 0 ].x + segment.vertices[ 1 ].x )/ 2 ),
+                    Math.round( ( segment.vertices[ 0 ].y + segment.vertices[ 1 ].y )/ 2 )
+                ]
+                let to = [
+                    Math.round( from[ 0 ] + 8 * WoopMath.lookup_cos( segment.angle + 90 ) ),
+                    Math.round( from[ 1 ] + 8 * WoopMath.lookup_sin( segment.angle + 90 ) )
+                ]
+                renderer.draw_editor_line( from[ 0 ], from[ 1 ], to[ 0 ], to[ 1 ] )
             } )
-            //draw from bsp tree
+            //draw edge visible from the bsp tree
             renderer.draw_editor_sector_in_field_of_view()
         }
 

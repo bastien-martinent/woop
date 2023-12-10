@@ -10,8 +10,9 @@ import InputManager    from "./InputManager.js"
 export default class Woop{
     constructor( canvas, options = {} ){
         let render_mode   = ( options.render !== undefined ) ? options.render : '2D'
-        let pixel_scale   = ( options.scale !== undefined ) ? options.scale : 4
+        let pixel_scale   = ( options.scale !== undefined ) ? options.scale : 8
         let field_of_view = ( options.field_of_view !== undefined ) ? options.field_of_view : 90
+        let player_height = ( options.player_height !== undefined ) ? options.player_height : 45
         let frame_rate    = ( options.frame_rate !== undefined ) ? options.frame_rate       : 30
         let debug         = ( options.debug !== undefined ) ? options.debug : false
 
@@ -25,9 +26,9 @@ export default class Woop{
         this.debbuger          = new Debugger( this, debug )
         this.wad_loader        = new WadLoader( this,[ './wads/DOOM1.WAD' ] )
 
-        this.level             = new Level()
+        this.level             = new Level( this )
         this.level.load_from_wad( this.wad_loader, 'E1M1' )
-        this.player            = this.level.spawn_player()
+        this.player            = this.level.spawn_player( player_height )
 
         this.inputs            = new InputManager( this )
         this.game              = new Game( this )

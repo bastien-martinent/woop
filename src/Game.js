@@ -5,6 +5,10 @@ export default class Game{
         this.woop = woop
     }
     update = () => {
+
+        //crud z update
+        this.woop.player.position.set_z( this.woop.player.floor_hight + this.woop.player.height )
+
         if( this.woop.inputs.mouse_lock ){
             this.woop.player.horizontal_angle -= Math.round( this.woop.inputs.mouse_movements.x / 8 )
         }else{
@@ -37,6 +41,9 @@ export default class Game{
         }
         if( this.woop.inputs.input_status.has( "up_down" ) ){ this.woop.player.position.z += 4 }
         if( this.woop.inputs.input_status.has( "down_down" ) ){ this.woop.player.position.z -= 4 }
+
+
+
         //TODO:: add boundaries
     }
     render = ( renderer ) => {
@@ -44,6 +51,7 @@ export default class Game{
 
         //draw from bsp tree
         if( this.woop.level ) {
+            this.woop.debbuger.clear_data()
             renderer.draw_game_sector_in_field_of_view()
         }
     }

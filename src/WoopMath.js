@@ -98,7 +98,7 @@ export default class WoopMath {
         if( angle >= 0 ){
             return Math.round( screen_distance - Math.tan( this.degrees_to_radians( angle ) ) * demi_internal_width )
         }
-        return Math.round( (  Math.tan( this.degrees_to_radians( angle ) ) * - 1 ) * demi_internal_width + screen_distance )
+        return Math.round( ( Math.tan( this.degrees_to_radians( angle ) ) * - 1 ) * demi_internal_width + screen_distance )
     }
 
 }

@@ -2,15 +2,17 @@ import Int2DVertex from "./type/Int2DVertex.js"
 import WoopMath from "./WoopMath.js"
 
 export class BSPTree{
+
     constructor( woop, nodes ) {
         this.woop  = woop
         this.nodes = nodes
         this.root  = nodes[ nodes.length-1 ]
     }
+
     render_nodes( player, draw_callback, interrupt_callback = () => { return false }, node = this.root, ){
         if( interrupt_callback() ){ return }
         if( node instanceof SubSector ){
-            //leaf are SubSector object
+            //leaf of the bsptree are SubSector to draw
             draw_callback( node )
             return
         }
@@ -26,11 +28,48 @@ export class BSPTree{
             }
         }
     }
+
+    get_subsectors_to_render( player, interrupt_callback = () => { return false } ){
+        let result = {
+            player_subsector : false,
+            player_sector    : false,
+            subsectors       : []
+        }
+        this.traverse_tree( player, this.root, result, interrupt_callback )
+        return result
+    }
+
+    traverse_tree( player, node, result, interrupt_callback ){
+        if( interrupt_callback() ){ return }
+        if( node instanceof SubSector ){
+            if( ! result.player_subsector ) {
+                result.player_subsector = node.id
+
+                result.player_sector = node.segments[0].edge.right.sector
+
+            }
+            result.subsectors.push( node )
+            return
+        }
+        if( this.is_right( player, node ) ){
+            this.traverse_tree( player, node.right, result, interrupt_callback )
+            if( this.check_bound_box( player, node.left_bound_box ) ){
+                this.traverse_tree( player, node.left, result, interrupt_callback )
+            }
+        }else{
+            this.traverse_tree( player, node.left, result, interrupt_callback )
+            if( this.check_bound_box( player, node.right_bound_box ) ){
+                this.traverse_tree( player, node.right, result, interrupt_callback )
+            }
+        }
+    }
+
     is_right( player, node ){
         let delta_x = player.position.x - node.partition_line.start.x
         let delta_y = player.position.y - node.partition_line.start.y
         return ( ( delta_x * node.partition_line.y_direction ) - ( delta_y * node.partition_line.x_direction ) >= 0 )
     }
+
     check_bound_box( player, bound_box ){
         let left         = bound_box.top_left.x
         let right        = bound_box.bottom_right.x
@@ -71,14 +110,14 @@ export class BSPTree{
             let angle_start  = WoopMath.angle_range( WoopMath.point_to_angle( player.position, box_sides[ i ][ 0 ] ),0, 360, true, false )
             let angle_end    = WoopMath.angle_range( WoopMath.point_to_angle( player.position, box_sides[ i ][ 1 ] ), 0, 360, true, false )
             let angle_span   = WoopMath.angle_range( angle_start - angle_end, 0, 360, true, false )
-            let angle_span_1 = WoopMath.angle_range( angle_start - player.horizontal_angle + this.woop.renderer.demi_horisontal_fov , 0, 360, true, false )
-            if( angle_span_1 < this.woop.renderer.horisontal_fov + angle_span ){ return true }
+            let angle_span_1 = WoopMath.angle_range( angle_start - player.horizontal_angle + this.woop.renderer.demi_horizontal_fov , 0, 360, true, false )
+            if( angle_span_1 < this.woop.renderer.horizontal_fov + angle_span ){ return true }
         }
         return false
     }
 }
 
-export class BSPNode{
+export class BSPNode{ww
     constructor( id, right_node, left_node, right_bound_box, left_bound_box, partition_line ) {
         this.id               = id
         this.right            = right_node
@@ -109,12 +148,12 @@ export class SubSector{
     }
 }
 export class Segment{
-    constructor( id, vertex_start, vertex_end, angle, offset, edge ){
-        this.id       = id
-        this.vertices = [ vertex_start, vertex_end ]
-        this.angle    = angle
-        this.offset   = offset
-        this.edge     = edge
+    constructor( id, vertex_start, vertex_end, angle, offset, edge ) {
+        this.id = id
+        this.vertices     = [vertex_start, vertex_end]
+        this.angle        = angle
+        this.offset       = offset
+        this.edge         = edge
     }
 }
 export class Edge {
@@ -129,7 +168,7 @@ export class Edge {
     set_direction = ( direction ) => {
         if( this.direction !== direction && [ 0,1 ].includes( direction ) ){
             this.direction = direction
-            this.right = [this.left, this.left = this.right][0]
+            this.right     = [this.left, this.left = this.right][0]
         }
     }
     set_angle = ( angle ) => {

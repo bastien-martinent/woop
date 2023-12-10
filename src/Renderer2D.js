@@ -85,8 +85,8 @@ export default class Renderer2D extends Renderer{
         let player_position_x      = this.woop.player.position.x * grid_scale - offset_x
         let player_position_y      = this.woop.player.position.y * -1 * grid_scale - offset_y
         let player_horizontal_angle = WoopMath.angle_range( ( this.woop.player.horizontal_angle * -1 ) )
-        let fov_line_1             = WoopMath.angle_range( ( this.woop.player.horizontal_angle * -1 ) + ( this.horisontal_fov / 2 ) )
-        let fov_line_2             = WoopMath.angle_range( ( this.woop.player.horizontal_angle * -1 ) - ( this.horisontal_fov / 2 ) )
+        let fov_line_1             = WoopMath.angle_range( ( this.woop.player.horizontal_angle * -1 ) + ( this.horizontal_fov / 2 ) )
+        let fov_line_2             = WoopMath.angle_range( ( this.woop.player.horizontal_angle * -1 ) - ( this.horizontal_fov / 2 ) )
 
         //player position
         this.draw_editor_point_2D( this.woop.player.position.x, this.woop.player.position.y, color, 1, color, .5, 4, 1 )
@@ -242,18 +242,21 @@ export default class Renderer2D extends Renderer{
     draw_editor_sub_sector_2D = ( sub_sector ) => {
         for( let i = 0; i < sub_sector.segments.length; i++ ){
             //seg are not facing player
+            let debug_segment = [ 330 ]
+
+            let segment     = sub_sector.segments[ i ]
             let angle_start = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
             let angle_end   = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
             let angle_span  = WoopMath.angle_range( angle_start - angle_end, 0, 360, true, false )
             if( angle_span > 180 ){ continue }
 
             let x1_angle = angle_start - this.woop.player.horizontal_angle
-            let angle_start_span = WoopMath.angle_range( x1_angle + this.woop.renderer.demi_horisontal_fov, 0, 360, true, false )
-            if( angle_start_span > angle_span + this.woop.renderer.horisontal_fov ){ continue }
+            let angle_start_span = WoopMath.angle_range( x1_angle + this.woop.renderer.demi_horizontal_fov, 0, 360, true, false )
+            if( angle_start_span > angle_span + this.woop.renderer.horizontal_fov ){ continue }
 
             let x2_angle = angle_end - this.woop.player.horizontal_angle
-            let angle_end_span = WoopMath.angle_range( this.woop.renderer.demi_horisontal_fov - x2_angle, 0, 360, true, false )
-            if( angle_end_span > angle_span + this.woop.renderer.horisontal_fov ){ continue }
+            let angle_end_span = WoopMath.angle_range( this.woop.renderer.demi_horizontal_fov - x2_angle, 0, 360, true, false )
+            if( angle_end_span > angle_span + this.woop.renderer.horizontal_fov ){ continue }
 
             this.add_color(
                 sub_sector.id,
@@ -268,6 +271,26 @@ export default class Renderer2D extends Renderer{
                 sub_sector.segments[ i ].edge.vertices[ 1 ].y,
                 sub_sector.id, 1, 4
             )
+
+            let from = [
+                Math.round( ( segment.vertices[ 0 ].x + segment.vertices[ 1 ].x )/ 2 ),
+                Math.round( ( segment.vertices[ 0 ].y + segment.vertices[ 1 ].y )/ 2 )
+            ]
+            let to = [
+                Math.round( from[ 0 ] + 16 * WoopMath.lookup_cos( segment.angle + 90 ) ),
+                Math.round( from[ 1 ] + 16 * WoopMath.lookup_sin( segment.angle + 90 ) )
+            ]
+            this.draw_editor_line( from[ 0 ], from[ 1 ], to[ 0 ], to[ 1 ], sub_sector.id, 1, 4 )
+
+            if( debug_segment.includes( sub_sector.segments[ i ].id ) ){
+                this.woop.debbuger.update_data(
+                    "segment_"+sub_sector.segments[ i ].id,
+                    {
+                        segment : sub_sector.segments[ i ],
+                    }
+                )
+            }
+
         }
     }
 
@@ -291,19 +314,83 @@ export default class Renderer2D extends Renderer{
         }
     }
 
+    draw_game_sector_in_field_of_view_2D = ( bsp_tree ) => {
+        this.screen_space.init()
+        //bsp_tree.render_nodes( this.woop.player, this.draw_game_sub_sector_2D, this.screen_space.is_full )
+        let result = bsp_tree.get_subsectors_to_render( this.woop.player, this.screen_space.is_full )
+
+        this.woop.player.floor_hight = result.player_sector.floor.height
+
+        for( let i = 0; i < result.subsectors.length; i++ ){
+            this.draw_game_sub_sector_2D( result.subsectors[ i ] )
+        }
+
+    }
+    draw_game_sub_sector_2D = ( sub_sector ) => {
+        for( let i = 0; i < sub_sector.segments.length && this.screen_space.has_space(); i++ ){
+            //segment are not facing player
+            let angle_start = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
+            let angle_end   = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
+            let angle_span  = WoopMath.angle_range( angle_start - angle_end, 0, 360, true, false )
+            if( angle_span > 180 ){ continue }
+
+            //segment are not in field of view
+            let x1_angle = angle_start - this.woop.player.horizontal_angle
+            let angle_start_span = WoopMath.angle_range( x1_angle + this.woop.renderer.demi_horizontal_fov, 0, 360, true, false )
+            if( angle_start_span > this.woop.renderer.horizontal_fov ){
+                if( angle_start_span >= angle_span + this.woop.renderer.horizontal_fov ){ continue }
+                //segments are clipped
+                x1_angle = this.woop.renderer.horizontal_fov
+            }
+            let x2_angle = angle_end - this.woop.player.horizontal_angle
+            let angle_end_span = WoopMath.angle_range( this.woop.renderer.demi_horizontal_fov - x2_angle, 0, 360, true, false )
+            if( angle_end_span > this.woop.renderer.horizontal_fov ){
+                if( angle_end_span >= angle_span + this.woop.renderer.horizontal_fov ){ continue }
+                //segments are clipped
+                x2_angle = -this.woop.renderer.horizontal_fov
+            }
+
+            let x1_to_screen = WoopMath.angle_to_screen_x( x1_angle, this.screen_distance, this.demi_internal_width )
+            let x2_to_screen = WoopMath.angle_to_screen_x( x2_angle, this.screen_distance, this.demi_internal_width )
+            let x1 = WoopMath.value_range( x1_to_screen, 0, this.internal_width -1 )
+            let x2 = WoopMath.value_range( x2_to_screen, 0, this.internal_width -1 )
+            let debug_segment = []
+            let debug_data    = {}
+
+            //screen buffer checks
+            if( this.screen_space.horizontal_line_has_space( x1, x2 ) ){
+                for( let x = x1; x <= x2; x++ ){
+                    if( this.screen_space.vertical_line_has_space( x ) ){
+                        let emptiness_end_at = this.screen_space.get_empty_horizontal_range( x )
+                        this.draw_game_edge( sub_sector.segments[ i ], angle_start, x1, x2, x, emptiness_end_at )
+                        x = emptiness_end_at
+                    }
+                }
+            }
+            if( debug_segment.includes( sub_sector.segments[ i ].id ) ){
+                this.woop.debbuger.update_data(
+                    "screen_segment_"+sub_sector.segments[ i ].id,
+                    debug_data
+                )
+            }
+
+        }
+    }
+
     draw_game_edge_2D = ( segment, angle_start, x_start, x_end, range_x_star, range_x_end ) => {
-        let debug_segment = [ 292 ]
+        let debug_segment = [ 330 ]
 
         let is_solid        = segment.edge.attributes.is_solid
-        //let is_portal       = segment.edge.attributes.is_portal
+        let is_portal       = segment.edge.attributes.is_portal
         let right_edge_side = segment.edge.right
         let left_edge_side  = segment.edge.left
         let right_sector    = right_edge_side.sector
         let left_sector     = ( left_edge_side ) ? left_edge_side.sector : false
 
-        let upper_texture   = right_edge_side.textures.upper
+        let upper_texture   = false
         let middle_texture  = right_edge_side.textures.middle
-        let lower_texture   = right_edge_side.textures.low
+        let lower_texture   = false
+
         let celling_texture = right_sector.celling.texture
         let floor_texture   = right_sector.floor.texture
 
@@ -312,41 +399,51 @@ export default class Renderer2D extends Renderer{
         let celling_light   = right_sector.celling.light
 
         let relative_celling_height = right_sector.celling.height - this.woop.player.position.z
-        let relative_floor_height   = right_sector.floor.height - this.woop.player.position.z
-        let relative_upper_height   = ( left_sector )
-            ? left_sector.celling.height - this.woop.player.position.z : relative_celling_height
-        let relative_low_height     = ( left_sector )
-            ? left_sector.floor.height - this.woop.player.position.z  : relative_floor_height
+        let relative_upper_height   = relative_celling_height
+        let relative_low_height     = right_sector.floor.height - this.woop.player.position.z
+        let relative_floor_height   = relative_low_height
 
-        if( is_solid
-            || relative_celling_height === relative_upper_height
-            || relative_celling_height >= 0
-        ){
-            upper_texture = false
-        }else if( relative_celling_height > relative_upper_height ){
-            relative_upper_height = [ relative_celling_height, relative_celling_height = relative_upper_height ][0]
-            upper_texture         = left_edge_side.textures.upper
+        if( left_sector ){
+            if( right_sector.celling.height != left_sector.celling.height ){
+                if( right_sector.celling.height > left_sector.celling.height ){
+                    relative_celling_height = right_sector.celling.height - this.woop.player.position.z
+                    relative_upper_height   = left_sector.celling.height - this.woop.player.position.z
+                    upper_texture           = right_edge_side.textures.upper
+                }else{
+                    relative_celling_height = left_sector.celling.height - this.woop.player.position.z
+                    relative_upper_height   = right_sector.celling.height - this.woop.player.position.z
+                    upper_texture           = left_edge_side.textures.upper
+                }
+                if( right_sector.floor.height < left_sector.floor.height ){
+                    relative_low_height   = left_sector.floor.height - this.woop.player.position.z
+                    relative_floor_height = right_sector.floor.height - this.woop.player.position.z
+                    lower_texture         = right_edge_side.textures.low
+                }else{
+                    relative_low_height   = right_sector.floor.height - this.woop.player.position.z
+                    relative_floor_height = left_sector.floor.height - this.woop.player.position.z
+                    lower_texture         = left_edge_side.textures.low
+                }
+            }
         }
 
+        let upper_edge_is_draw  = !!( upper_texture !== false )
+        let middle_edge_is_draw = !!( middle_texture !== false )
+        let lower_edge_is_draw  = !!( lower_texture !== false )
+        let celling_is_draw     = !!( celling_texture !== false )
+        let floor_is_draw       = !!( floor_texture !== false )
 
-        if( is_solid
-            || relative_floor_height === relative_low_height
-            || relative_floor_height <= 0
-        ){
-            lower_texture = false
+        if( debug_segment.includes( segment.id ) ){
+            this.woop.debbuger.update_data(
+                "segment_"+segment.id,
+                {
+                    is_solid  : is_solid,
+                    is_portal : is_portal,
+                    display   : { upper_edge_is_draw, middle_edge_is_draw, lower_edge_is_draw, celling_is_draw, floor_is_draw },
+                }
+            )
         }
-        /*
-        else if( relative_floor_height < relative_low_height ){
-            relative_low_height = [ relative_floor_height, relative_floor_height = relative_low_height ][0]
-            lower_texture       = left_edge_side.textures.low
-        }
-        */
 
-        let upper_edge_is_draw  = ( upper_texture !== false )
-        let middle_edge_is_draw = ( middle_texture !== false )
-        let lower_edge_is_draw  = ( lower_texture !== false )
-        let celling_is_draw     = ( celling_texture !== false )
-        let floor_is_draw       = ( floor_texture !== false )
+        this.draw_text( x_start * this.pixel_scale, ( edge_upper_y - 20 ) * this.pixel_scale, segment.id.toString(), upper_texture, 18 )
 
         if( ! upper_edge_is_draw
             && ! middle_edge_is_draw
@@ -355,15 +452,6 @@ export default class Renderer2D extends Renderer{
             && ! floor_is_draw
         ){
             return
-        }
-
-        if( debug_segment.includes( segment.id ) ){
-            console.log(
-                {
-                    is_solid,
-                    display : { upper_edge_is_draw, middle_edge_is_draw, lower_edge_is_draw, celling_is_draw, floor_is_draw }
-                }
-            )
         }
 
         let edge_normal  = segment.edge.angle + 90
@@ -397,73 +485,29 @@ export default class Renderer2D extends Renderer{
                 this.draw_game_vertical_line( x, Math.round( y1 ), Math.round( y2 ), middle_texture )
                 this.screen_space.fill_vertical_line( x, Math.round( y1 ), Math.round( y2 ) )
             }
+
             if( upper_edge_is_draw ){
                 this.draw_game_vertical_line( x, Math.round( celling_y ), Math.round( upper_y ), upper_texture )
                 this.screen_space.fill_vertical_line( x, Math.round( celling_y ), Math.round( upper_y ) )
             }
+
+            if( celling_is_draw ){
+                let y_start = this.screen_space.get_empty_vertical_range( x, Math.round( celling_y ), 0 )
+                //this.draw_game_vertical_line( x, y_start, Math.round( celling_y ), celling_texture )
+                //this.screen_space.fill_vertical_line( x, y_start, Math.round( celling_y ) )
+            }
+
             if( lower_edge_is_draw ){
                 this.draw_game_vertical_line( x, Math.round( low_y ), Math.round( floor_y ), lower_texture )
                 this.screen_space.fill_vertical_line( x, Math.round( low_y ), Math.round( floor_y ) )
             }
 
-            if( celling_is_draw ){
-                //let y_start = this.screen_space.get_empty_vertical_range( x, Math.round( celling_y ), 0 )
-                //this.draw_game_vertical_line( x, y_start, Math.round( celling_y ), celling_texture )
-                //this.screen_space.fill_vertical_line( x, y_start, Math.round( celling_y ) )
-            }
-
             if( floor_is_draw ){
-                //this.draw_game_vertical_line( x, Math.round( floor_y ), this.internal_height -1, floor_texture )
+                this.draw_game_vertical_line( x, Math.round( floor_y ), this.internal_height -1, floor_texture )
                 //this.screen_space.fill_vertical_line( x, Math.round( floor_y ), this.internal_height -1 )
             }
         }
 
-        this.draw_text( x_start * this.pixel_scale, ( edge_upper_y - 20 ) * this.pixel_scale, segment.id.toString(), upper_texture, 18 )
-
-    }
-
-    draw_game_sector_in_field_of_view_2D = ( bsp_tree ) => {
-        this.screen_space.init()
-        bsp_tree.render_nodes( this.woop.player, this.draw_game_sub_sector_2D, this.screen_space.is_full )
-        //console.log( this.screen_space )
-    }
-    draw_game_sub_sector_2D = ( sub_sector ) => {
-        for( let i = 0; i < sub_sector.segments.length && this.screen_space.has_space(); i++ ){
-            //segment are not facing player
-            let angle_start = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 0 ] )
-            let angle_end   = WoopMath.point_to_angle( this.woop.player.position, sub_sector.segments[ i ].edge.vertices[ 1 ] )
-            let angle_span  = WoopMath.angle_range( angle_start - angle_end, 0, 360, true, false )
-            if( angle_span > 180 ){ continue }
-
-            //segment are not in field of view
-            let x1_angle = angle_start - this.woop.player.horizontal_angle
-            let angle_start_span = WoopMath.angle_range( x1_angle + this.woop.renderer.demi_horisontal_fov, 0, 360, true, false )
-            if( angle_start_span >= angle_span + this.woop.renderer.horisontal_fov ){ continue }
-
-            let x2_angle = angle_end - this.woop.player.horizontal_angle
-            let angle_end_span = WoopMath.angle_range( this.woop.renderer.demi_horisontal_fov - x2_angle, 0, 360, true, false )
-            if( angle_end_span >= angle_span + this.woop.renderer.horisontal_fov ){ continue }
-
-            let x1 = WoopMath.value_range(
-                WoopMath.angle_to_screen_x( x1_angle, this.screen_distance, this.demi_internal_width ),
-                0, this.internal_width -1
-            )
-            let x2 = WoopMath.value_range(
-                WoopMath.angle_to_screen_x( x2_angle, this.screen_distance, this.demi_internal_width ),
-                0, this.internal_width -1
-            )
-
-            if( this.screen_space.horizontal_line_has_space( x1, x2 ) ){
-                for( let x = x1; x <= x2; x++ ){
-                    if( this.screen_space.vertical_line_has_space( x ) ){
-                        let emptiness_end_at = this.screen_space.get_empty_horizontal_range( x )
-                        this.draw_game_edge( sub_sector.segments[ i ], angle_start, x1, x2, x, emptiness_end_at )
-                        x = emptiness_end_at
-                    }
-                }
-            }
-
-        }
     }
 
 }

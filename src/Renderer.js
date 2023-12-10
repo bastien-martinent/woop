@@ -57,8 +57,8 @@ export default class Renderer{
         this.internal_height      = Math.round( this.canvas.height / this.pixel_scale )
         this.demi_internal_width  = this.internal_width / 2
         this.demi_internal_height = this.internal_height / 2
-        this.horisontal_fov       =  this.fov
-        this.demi_horisontal_fov  = this.horisontal_fov / 2
+        this.horizontal_fov       =  this.fov
+        this.demi_horizontal_fov  = this.horizontal_fov / 2
         /* maybe you can find a way to adjust fov from desired fov and screen aspect ratio
             FOV_Horizontal = 2 * atan(W/2/f) = 2 * atan2(W/2, f)  radians
             FOV_Vertical   = 2 * atan(H/2/f) = 2 * atan2(H/2, f)  radians
@@ -67,7 +67,7 @@ export default class Renderer{
             this.vertical_fov = WoopMath.degrees_to_radians( 2 * Math.atan2( this.demi_internal_height, this.fov ) )
             this.vertical_fov = this.vertical_fov / 2
         */
-        this.screen_distance      = this.demi_internal_width / Math.tan( WoopMath.degrees_to_radians( this.demi_horisontal_fov ) )
+        this.screen_distance      = this.demi_internal_width / Math.tan( WoopMath.degrees_to_radians( this.demi_horizontal_fov ) )
         this.screen_space         = new ScreenSpace( this.internal_width, this.internal_height )
         WoopMath.init( this )
     }

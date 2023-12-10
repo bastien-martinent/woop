@@ -30,11 +30,15 @@ export default class Level{
         this.vertices     = map_data.get_vertices()
         this.segments     = map_data.get_segments()
     }
-    spawn_player(){
-        return new Player(
+    spawn_player( player_height ){
+        let player = new Player(
             this.player_start.position,
             this.player_start.horizontal_angle,
-            this.player_start.vertical_angle
+            this.player_start.vertical_angle,
+            player_height
         )
+        let result = this.bsp_tree.get_subsectors_to_render( player )
+        player.position.set_z( player_height + result.player_sector.floor.height )
+        return player
     }
 }

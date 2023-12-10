@@ -8,6 +8,14 @@ export default class Debugger {
         this.head        = null
         this.body        = null
         this.map_context = null
+        this.data        = {}
+    }
+
+    clear_data() {
+        this.data = {}
+    }
+    update_data( index, value ) {
+        this.data[index] = value
     }
 
     init(){
@@ -48,18 +56,19 @@ export default class Debugger {
         body.innerHTML             += "Mouse position : <span id='debug_mouse'></span><br>"
         body.innerHTML             += "Cursor position : <span id='debug_cursor'></span><br>"
         body.innerHTML             += "Editor position : <span id='debug_editor_pos'></span><br>"
-        body.innerHTML             += "<canvas id='debug_map' width='"+map_display_x+"' height='"+map_display_y+"'></canvas>"
+        //body.innerHTML             += "<canvas id='debug_map' width='"+map_display_x+"' height='"+map_display_y+"'></canvas>"
         body.innerHTML             += "Player position : <br><span id='debug_p_pos'></span><br><span id='debug_p_ang'></span><br>"
+        body.innerHTML             += "Data : <br><span id='debug_data'></span><br>"
 
         document.body.append( head )
         document.body.append( body )
 
         this.head                    = head
         this.body                    = body
-        this.map_context             = document.getElementById( "debug_map" ).getContext( "2d" )
-        this.map_context.fillStyle   = "rgba( 0, 0, 0 , 1 )"
-        this.map_context.strokeStyle = "rgba( 0, 0, 0 , 1 )"
-        this.map_context.strokeRect( 0, 0, map_display_x, map_display_y )
+        //this.map_context             = document.getElementById( "debug_map" ).getContext( "2d" )
+        //this.map_context.fillStyle   = "rgba( 0, 0, 0 , 1 )"
+        //this.map_context.strokeStyle = "rgba( 0, 0, 0 , 1 )"
+        //this.map_context.strokeRect( 0, 0, map_display_x, map_display_y )
 
         this.head.addEventListener( 'click', () => {
             this.body.display = ( this.body.display === "block" ) ? "none" : "block"
@@ -92,6 +101,7 @@ export default class Debugger {
         document.getElementById("debug_editor_pos").innerHTML = "<br>x-"+this.woop.editor.grid_pos.x+" <br>y-"+this.woop.editor.grid_pos.y
         document.getElementById("debug_p_pos").innerHTML      = "<br>x-"+this.woop.player.position.x+" <br>y-"+this.woop.player.position.y+" <br>z-"+this.woop.player.position.z
         document.getElementById("debug_p_ang").innerHTML      = "h_angle-"+this.woop.player.horizontal_angle+" v_angle-"+this.woop.player.look_vertical
+        document.getElementById("debug_data").innerHTML       = JSON.stringify( this.data, null, 2)
     }
 
     render(){
@@ -106,21 +116,21 @@ export default class Debugger {
         let x2            = Math.round( x1 + 10 * WoopMath.lookup_cos[ map_look ]  )
         let y2            = Math.round( y1 + 10 * WoopMath.lookup_sin[ map_look ] )
         // clear map
-        this.map_context.fillStyle = "rgba( 0, 0, 0 , 0)"
-        this.map_context.strokeStyle = "rgba( 0, 0, 0 , 1)"
-        this.map_context.clearRect(1, 1, map_display_x - 2, map_display_y - 2 )
-        this.map_context.strokeRect(0, 0, map_display_x, map_display_y )
+        //this.map_context.fillStyle = "rgba( 0, 0, 0 , 0)"
+        //this.map_context.strokeStyle = "rgba( 0, 0, 0 , 1)"
+        //this.map_context.clearRect(1, 1, map_display_x - 2, map_display_y - 2 )
+        //this.map_context.strokeRect(0, 0, map_display_x, map_display_y )
         // player pos
-        this.map_context.beginPath()
-        this.map_context.fillStyle = "rgba( 245, 40, 145 , 1)"
-        this.map_context.arc( x1, y1, 2, 0, 2 * Math.PI, false )
-        this.map_context.fill()
+        //this.map_context.beginPath()
+        //this.map_context.fillStyle = "rgba( 245, 40, 145 , 1)"
+        //this.map_context.arc( x1, y1, 2, 0, 2 * Math.PI, false )
+        //this.map_context.fill()
         // arrow
-        this.map_context.fillStyle = "rgba( 0, 0, 0 , 0 )"
-        this.map_context.strokeStyle = "rgba( 40, 40, 40 , 1 )"
-        this.map_context.beginPath()
-        this.map_context.moveTo( x1, y1 )
-        this.map_context.lineTo( x2, y2 )
-        this.map_context.stroke()
+        //this.map_context.fillStyle = "rgba( 0, 0, 0 , 0 )"
+        //this.map_context.strokeStyle = "rgba( 40, 40, 40 , 1 )"
+        //this.map_context.beginPath()
+        //this.map_context.moveTo( x1, y1 )
+        //this.map_context.lineTo( x2, y2 )
+        //this.map_context.stroke()
     }
 }
