@@ -1,2 +1,2 @@
 # woop
-js canavas old shool fps engine stuff
+js canvas old school fps engine stuff
